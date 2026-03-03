@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<!-- saved from url=(0041)https://heha.fwh.is/usb/USB2LPT/mf.en.htm -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="date" content="2006-08-27">
+<link rel="alternate" href="https://heha.fwh.is/usb/USB2LPT/mf.de.htm">
+<link rel="stylesheet" href="./mf.en_files/h.css"> 
+<script src="./mf.en_files/h.js.download"></script>
+<title>USB2LPT as multifunction device</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="https://heha.fwh.is/icons/laptop.png"></head><body style="overflow-x: auto;"><div id="LangSel" class="noprint">&nbsp;<a class="nul" href="https://heha.fwh.is/usb/USB2LPT/mf.de.htm" title="Deutscher Originaltext">🇩🇪</a></div>
+
+<center>Up to <a href="index.en.htm">USB2LPT — Overview</a></center>
+ 
+<h1>USB2LPT as multifunction device</h1>
+
+USB2LPT was developed as a so-called <b>multifunction device</b>
+with three concurrent functions.
+
+<p>Main function is simply passing
+<a href="api.en.htm"><b>direct access commands</b></a> to the <i>parallel port</i>,
+in conjunction with USB delays when reading a port.
+All parallel port extensions (PS/2, EPP, and ECP) are simulated
+and fully supported by firmware, but extra trapping
+by Windows driver may be necessary (is <i>off</i> by default).
+
+</p><p>The extra <b>printer</b> interface enables USB2LPT to be efficient
+on <i>printers</i> without loss of performance.
+All bidirectional printer protocols
+(Nibble Mode, Byte Mode, EPP, and ECP) are supported and
+used for the back-link bulk channel, but that's <i>not tested</i>!
+All known printers support Nibble Mode, and this is tested OK.
+
+</p><figure>
+<a href="wmf/"><img src="./mf.en_files/mf1.en.gif" alt="drawing of firmware structure" border="1"></a><br>
+<i>Structure of firmware</i>
+</figure>
+
+<p>The third function (<b>JTAG</b>) is not yet implemented.
+There is a lack of documentation about data streams used.
+When implemented, USB2LPT could be even <i>much faster</i>
+than a conventional parallel JTAG adapter
+connected to a legacy parallel port.
+Instead, a <b>HID</b> interface is implemented, with some Feature Records
+and optional Input and Output interrupt pipes,
+running the same protocol as the primary interface.
+This HID interface is intended for redirection in user-mode level,
+eliminating the need for a kernel-mode driver and its certification
+for Win64 systems.
+However, a simple redirection feature as implemented in USB2LPT.SYS
+would work much slower;
+concatenation of IN and OUT instructions to microcode is always recommended.
+</p><blockquote>
+The user must take care that the functions do not interfere!
+For example, do not try to print over USB2LPT while you are programming.
+</blockquote>
+<hr><p>
+When plugging USB2LPT to a Windows host, there will be the following
+driver structure under the hood:
+</p><p align="center">
+<a href="wmf/"><img src="./mf.en_files/mf0.en.gif" alt="drawing of Windows driver structure" border="1"></a><br>
+<i>Structure of drivers</i>
+</p>
+The port-accessing application software will be trapped by <b>usb2lpt.sys</b>
+by either a <b>Debug Register trap</b> or a <b>trapped port access function *</b>.
+The access will be transcoded and put to <b>USBD</b>, who is “communicating”
+via USB with firmware function <b>Direct Input/Output</b>.
+<p>
+The third function is missing there too.
+A modified .INF file is sufficient for enabling this data path.
+</p><p>
+</p><hr>
+* Trapped port access functions are:<code class="c"><ul>
+ <li>READ_PORT_UCHAR()
+ </li><li>READ_PORT_USHORT()
+ </li><li>READ_PORT_ULONG()
+ </li><li>WRITE_PORT_UCHAR()
+ </li><li>WRITE_PORT_USHORT()
+ </li><li>WRITE_PORT_ULONG()
+</li></ul></code>
+
+
+<div id="give-freely-root-bcjindcccaagfpapjjmafapmmgkkhgoa" class="give-freely-root" data-extension-id="bcjindcccaagfpapjjmafapmmgkkhgoa" data-extension-name="JSON Formatter" style="display: block;"><template shadowrootmode="open"></template></div><footer><nav title="Navigation" class="slidein"><a href="https://heha.fwh.is/USB2LPT">Directory above (USB2LPT)</a></nav><hr><address><p id="date"><a href="https://heha.fwh.is/usb/USB2LPT/email?USB2LPT%20as%20multifunction%20device">Henrik Haftmann</a>, created: <time datetime="2006-08-27">August 27. 2006</time> — last modified: <time datetime="2018-03-15">March 15. 2018</time><a class="suppress_before" href="https://de.wikipedia.org/wiki/Creative_Commons"><img src="./mf.en_files/CC_BY_icon.svg" align="right" title="gemeinfrei bei Namensnennung"></a>
+</p></address></footer></body></html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<!-- saved from url=(0043)https://heha.fwh.is/usb/USB2LPT/nrnd.en.htm -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="date" content="2016-07-15">
+<meta name="keywords" lang="de" content="USB, LPT, Parallel, Parallelport, Druckerport, Konverter, Adapter">
+<meta name="keywords" lang="en" content="USB, LPT, parallel, parallel port, printer port, converter, adaptor">
+<!--<link rel=alternate href="nrnd.de.htm">-->
+<link rel="stylesheet" href="./nrnd.en_files/h.css">
+<script src="./nrnd.en_files/h.js.download"></script>
+<title>USB2LPT: Not recommended for new designs</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="https://heha.fwh.is/icons/laptop.png"></head><body style="overflow-x: auto;">
+
+<h1>USB2LPT: Not recommended for new designs</h1>
+
+<b>Despite:</b> USB2LPT was <i>never</i> recommended for new designs.<p>
+
+It depends on why you need one.
+USB2LPT's .sys driver with its port access redirection “feature”
+is a dirty hack and never truly stable.
+Moreover, it is slow and will not work at all for 64-bit versions of Windows.
+(Except you disable the Patchguard somehow.)
+<i>In conjunction with my InpOut32.dll, USB2LPT is capable to run on 64-bit Windows.</i>
+I have no Linux solution for it.
+Here are some usage scenarios you should differentiate first:</p><ul>
+
+<li>If you have <b>source code</b> for your problem, solve it by rewriting.
+ You may use one USB2LPT device in this case, as it can be seen as a fully documented
+ USB development kit with USB on the one side, a SubD25 female connector on the other side,
+ and a nice case.
+ Time-critical parts of your software should be managed by firmware.
+ For PC communication, I recommend the HID USB class in general.
+ Beside using my USB2LPT, I recommend using any other USB development system too,
+ e.g. the widespread Arduino Leonardo or the compatible Pro Micro board.
+</li><li>If your program is a <b>DOS program</b>, either use DOSBox and write your DOSBox driver
+ (it is well documented how to do so),
+ or use <tt>ntvdm</tt> (32-bit only) and write a VDD
+ (this is poorly documented, but look at my InpOut32.dll source code for sufficient clues).
+ Continue as stated above.
+</li><li>If your program is a <b>16-bit Windows program</b>, use 32-bit Windows
+ and its <tt>ntvdm</tt> and continue as above.
+</li><li>If it is for a <b>dongle</b> (= software copy protection device), forget USB2LPT.
+ Dongled programs are “smart” enough to defeat usb2lpt.sys.
+</li><li>If it is for a <b>chip programmer</b> or <b>JTAG</b> interface,
+ forget USB2LPT, it is much too slow. Even the high-speed device.
+ <i>In rare cases,</i> you can live with long programming times,
+ but you should urgently use the high-speed version.
+ I have none available: Buy any CY7C68013A development board (6-10&nbsp;US$)
+ and put my firmware (usb2lpt2.iic) onto it.
+ Wire the pin headers to a SubD connector as given in my schematic, and you are done.
+ Note that, while slow <i>programming</i> may be acceptable,
+ slow <i>debug</i> reaction is inacceptable, as JTAG is often used for debugging.
+</li><li>For <b>data acquisition</b>, like oscilloscopes or CCD image reception, USB2LPT is much too slow.
+ Nobody can live with that slow speed.
+ Use a true parallel port.
+</li><li>For <b>CNC machines</b> with stepper motors, USB2LPT is too slow.
+ It may work but not for sure over long periods of time.
+ Nobody wants bad quality due to some missing steps in the middle of a milling process or so.
+ Use a true parallel port.
+</li><li>For <b>slow automation control</b>, like LEDs, ASCII LC-Displays,
+ (synchronous clocked) temperature sensors, caliper readback, or relays, USB2LPT ist fully okay.
+ But often there are cheap USB alternatives available.
+ Delays may be noticeable but generally acceptable.
+</li><li>If you urgently need your <b>precious hardware on USB</b>,
+ you (not I) have to disassemble your software and rewrite it.
+ At the end, you may have a perfect solution <i>with</i> source code.
+</li></ul>
+
+USB2LPT never solves problems you would encounter even with a true parallel port:
+Trouble using your program within 64-bit Windows you have to solve otherwise yourself.
+Either using my InpOut32.dll or my giveio64.
+With my inpout32.dll, you can even use cheaply available USB-ParallelPrinter converters,
+so, often for relay cards, my USB2LPT is still again obsolete.<p>
+
+</p><div id="give-freely-root-bcjindcccaagfpapjjmafapmmgkkhgoa" class="give-freely-root" data-extension-id="bcjindcccaagfpapjjmafapmmgkkhgoa" data-extension-name="JSON Formatter" style="display: block;"><template shadowrootmode="open"><style>
+  :host {
+    all: initial;
+  }
+
+  .gf-scroll-remove::-webkit-scrollbar {
+    border-radius-bottom-right: 15px;
+  }
+
+  button {
+    cursor: pointer;
+    transition: transform 0.1s ease;
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+
+  .give-freely-close-button:hover {
+    opacity: 0.7;
+  }
+
+  input[type="radio"] {
+    margin-right: 8px;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid #e5e5e5;
+    margin: 1em 0;
+  }
+
+  dialog::backdrop  {
+    background-color: rgba(180, 180, 180, 0.6);
+  }
+
+  dialog.backdrop-hidden::backdrop  {
+    background-color: transparent;
+  }
+</style><div><div class="gf-app"></div></div></template></div><footer><nav title="Navigation" class="slidein"><a href="https://heha.fwh.is/USB2LPT">Directory above (USB2LPT)</a></nav><hr><address><p id="date"><a href="https://heha.fwh.is/usb/USB2LPT/email?USB2LPT:%20Not%20recommended%20for%20new%20designs">Henrik Haftmann</a>, created: <time datetime="2016-07-15">July 15. 2016</time> — last modified: <time datetime="2016-07-15">July 15. 2016</time><a class="suppress_before" href="https://de.wikipedia.org/wiki/Creative_Commons"><img src="./nrnd.en_files/CC_BY_icon.svg" align="right" title="gemeinfrei bei Namensnennung"></a>
+</p></address></footer></body></html>

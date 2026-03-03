@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<!-- saved from url=(0056)https://heha.fwh.is/usb/USB2LPT/AddressTranslator.en.htm -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="date" content="2012-01-01">
+<meta name="keywords" lang="de" content="Debugregister, Dongle, Parallelport, Emulator">
+<meta name="keywords" lang="en" content="debug register, dongle, parallel port, emulator">
+<link rel="alternate" href="https://heha.fwh.is/usb/USB2LPT/AddressTranslator.de.htm">
+<link rel="stylesheet" href="./AddressTranslator.en_files/h.css">
+<script src="./AddressTranslator.en_files/h.js.download"></script>
+<title>Address translation driver</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="https://heha.fwh.is/icons/laptop.png"></head><body><div id="LangSel" class="noprint">&nbsp;<a class="nul" href="https://heha.fwh.is/usb/USB2LPT/AddressTranslator.de.htm" title="Deutscher Originaltext">🇩🇪</a></div><div id="NavBar">Content</div><nav id="Nav"><ol><li><a href="AddressTranslator.en.htm#1">New inpout32.dll</a></li><li><a href="AddressTranslator.en.htm#2">Old-style solution</a></li></ol><div id="X" title="Close content overlay">X</div></nav>
+
+<h1 align="center">Port Address Translation <i>or</i> Port Access Redirection</h1>
+Modern parallel port cards for either PCI, PCIexpress, and ExpressCard (via PCIe)
+have fixed port base addresses above 0x1000, e.g. 0x<b>3008</b>.
+You cannot set their address to one of the well-known ISA addresses
+0x<b>378</b> or 0x<b>278</b>.
+(Note the address 0x<b>3BC</b> is <i>not</i> capable for
+<a href="http://en.wikipedia.org/wiki/Enhanced_parallel_port#IEEE_1284_modes">EPP and ECP</a>.)
+<p>
+Some older software cannot use an arbitrary port address, and you run into serious trouble.
+For example, the well-known <code>avrdude</code> command-line chip programmer.
+
+</p><section class="collapsed" id="1"><h2>New inpout32.dll<a class="hl" href="AddressTranslator.en.htm#1" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+
+Possibly you already know <a href="http://www.highrez.co.uk/Downloads/InpOut32/">inpout32.dll</a>,
+a well-known port access enabler that runs instantly without any installation hassle.
+
+<div class="r" style="width:324px">
+<a href="./AddressTranslator.en_files/InpOut32-1.png" title="Click for a screenshot with larger font"><img src="./AddressTranslator.en_files/InpOut32-3.png"></a>
+You can check the current address translation by invoking the following command line:
+»<code><b><span class="u" title="x64 Windows: The 64-bit rundll32.exe automatically invokes the 32-bit rundll32.exe, and vice versa, if the DLL bitness doesn&#39;t match.">rundll32</span>
+<span class="u" title="Optional. Without path, the one in %windir%\System32 has precedence.">.\</span>inpout32.<span class="u" title="Optional. Windows auto-appends .dll suffix.">dll</span>,<span class="u" title="Name of exported subroutine">Info</span></b></code>«.
+This interactive debug console will be shown.
+</div>
+
+<div class="yellowbox"><big>A
+<a href="inpout32-hs/">new version</a>
+(since March 2013) of <u>my fork</u> of well-known <b>inpout32.dll</b>
+has a built-in automatic address translation!</big><p><big>
+Moreover, this DLL can run software under Windows 64 bit
+which will fail otherwise, even on a true on-board parallel port.
+For example:</big></p><ul>
+ <li>Velleman Oscilloscope “PCS500”
+ </li><li>Access software “Wild GIF 12” for Leica survey instruments
+</li></ul>
+A process-wide exception handler with
+<a href="http://en.wikipedia.org/wiki/X86">x86</a> op-code decoder does the
+trick.<p>
+<big>If you don't need address translation on a Windows 64 bit
+system, the <a href="giveio64/" title="Browse zipfile on server
+or download archive">new giveio64 driver</a> (available since May 2015)
+will solve your problem more convenient and without any speed loss.</big>
+</p></div>
+<p></p>
+Therefore, applications relying on this library
+will run with such PCI / PCIexpress cards with no further setup.
+
+This also applies to 64 bit versions of Windows, and true 64 bit applications
+(latter use <b>inpoutx64.dll</b> instead, also contained in ZIP archive).<p>
+
+Moreover, <i>my inpout32.dll</i> has those benefits:</p><ul>
+ <li>Extra support for <a href="index.en.htm">my <b>USB2LPT</b></a>
+ </li><li>Support for <b>USB→ParallelPrinter</b> converters
+  (limited to 8 output and 3 input lines,
+  requires <a href="https://heha.fwh.is/usb/Programmierger%C3%A4te/UsbPrn-Adapter/">extra circuitry</a>
+  but will not require any administrative privilege)
+ </li><li>Built-in <b>Java Interface</b> (JNI) with variable package name,
+  compatible to <tt>jnpout*.dll</tt> (checked and OK)
+ </li><li><b>Microcode</b>-based <u>high-speed</u> API for <i>all</i> LPT devices
+ </li><li><b>Compatible</b> to <tt>dlportio.dll</tt> and <tt>io.dll</tt>, <i>inpout32.dll</i> can be renamed to replace those DLLs
+ </li><li><b>Able to run in user mode</b> when an administrator has set-up inpout32.dll
+  to load its driver at system startup instead of at DLL startup
+</li></ul>
+See also: <a href="https://heha.fwh.is/usb/LPTISA/emulate.en.htm">Emulate Hardware</a>
+<br clear="right">
+
+</span></section><section class="collapsed" id="2"><h2>Old-style solution<a class="hl" href="AddressTranslator.en.htm#2" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+
+<p style="background:#FFFFE0">
+<a href="https://heha.fwh.is/usb/USB2LPT/root/hs/dknack_.exe">This program</a>
+can redirect the port accesses for you,
+and does it universally for <i>all</i> known cases (DOS Box, Win16, Win32, VxD, other kernel-mode driver) in kernel mode.
+</p>
+<p>The bad news: Currently, this software runs on Windows 3.1 (Enhanced Mode),
+3.11, 95, 98, Me, NT 3.51, NT4, 2000.
+But not on XP and newer. Not on SMP machines.
+ECP and EPP parallel port extensions are <i>not</i> supported.
+
+</p><p>This program, written for a completely other purpose, has to be set-up as follows:
+</p><ul>
+ <li>Trapping: „586 debug register“ or „386 IOPM Table“
+ </li><li>Operation: „OFF“
+ </li><li>Speaker: <i>what you want</i>
+ </li><li>Load and start driver at startup: ON if you don't want to run this program everytime you need redirection
+ </li><li>Main address: Emulation at [LPT1]: Address you <i>want</i>
+ </li><li>Modify: Physical address: Address you <i>have</i> (see Device Manager)
+</li></ul>
+<p>It is a 16-bit program, but you won't see that. It's open-source. Look at the nice screenshots below:
+
+</p><figure>
+ <img src="./AddressTranslator.en_files/dk-main.en.png" alt="" title="Screenshot of main window"> &nbsp;
+ <img src="./AddressTranslator.en_files/dk-inst.en.png" alt="" title="Screenshot of installation dialog">
+ <figcaption>Screenshots for right program settings as port address translator</figcaption>
+</figure>
+
+<p>This kind of port access redirection is quite fast, so you can run
+high-speed parallel port devices like JTAG programmers and oscilloscopes,
+in opposite to the more amazing <a href="index.en.htm">USB2LPT</a> device.
+
+
+
+</p><div id="give-freely-root-bcjindcccaagfpapjjmafapmmgkkhgoa" class="give-freely-root" data-extension-id="bcjindcccaagfpapjjmafapmmgkkhgoa" data-extension-name="JSON Formatter" style="display: block;"><template shadowrootmode="open"></template></div></span></section><footer><nav title="Navigation"><a href="https://heha.fwh.is/USB2LPT">Directory above (USB2LPT)</a></nav><hr><address><p id="date"><a href="https://heha.fwh.is/usb/USB2LPT/email?Address%20translation%20driver">Henrik Haftmann</a>, created: <time datetime="2012-01-01">January 1. 2012</time> — last modified: <time datetime="2018-09-07">September 7. 2018</time><a class="suppress_before" href="https://de.wikipedia.org/wiki/Creative_Commons"><img src="./AddressTranslator.en_files/CC_BY_icon.svg" align="right" title="gemeinfrei bei Namensnennung"></a>
+</p></address></footer></body></html>

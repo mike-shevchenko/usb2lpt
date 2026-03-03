@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<!-- saved from url=(0044)https://heha.fwh.is/usb/USB2LPT/liste.en.htm -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="date" content="2008-01-01">
+<meta name="keywords" lang="de" content="USB, LPT, Parallel, Parallelport, Druckerport, Konverter, Adapter">
+<meta name="keywords" lang="en" content="USB, LPT, parallel, parallel port, printer port, converter, adaptor">
+<link rel="alternate" href="https://heha.fwh.is/usb/USB2LPT/liste.de.htm">
+<link rel="stylesheet" href="./liste.en_files/h.css">
+<script src="./liste.en_files/h.js.download"></script> 
+<title>USB to Parallel converter - List of successfully tested programs</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="https://heha.fwh.is/icons/laptop.png"></head><body style="overflow-x: auto;"><div id="LangSel" class="noprint">&nbsp;<a class="nul" href="https://heha.fwh.is/usb/USB2LPT/liste.de.htm" title="Deutscher Originaltext">🇩🇪</a></div>
+
+<div class="r"><img src="./liste.en_files/klein-12.jpg" alt="photo of USB2LPT2"></div>
+<p>
+<i>Keywords:</i> USB, LPT, parallel, parallel port, printer port, converter, adaptor
+</p><p>
+<a href="index.en.htm">USB2LPT — Overview</a>
+
+
+<!--<H2 align=center style=background:#F0F0F0
+>USB2LPT, installation on SMP machines, e. g. <i>Pentium4-HT</i></H2>
+The debug register trap causes a total system crash.
+(This error is localized, but I have no idea how to solve cleanly. [2007-9-20])
+<p>
+I recommend the following procedure to walk-around this bugs:<ul>
+<li>plug in USB2LPT device
+<li>let install drivers using Hardware Installation Wizard
+<li>run Device Manager
+<li>open the <i>Ports</i> subtree, then double-click onto USB2LPT
+<li><i>the Device Manager now shows up the property sheet page of USB2LPT</i>
+<li>click on tab <b>Emulation</b>
+<li>switch off <b>debug register trap</b>
+<li>click <b>OK</b>
+</ul>
+The bug that USB2LPT causes consuming much CPU power is now fixed
+– please ensure to use the <A href="usb2lpt.zip">latest driver</A>.
+-->
+
+</p><h1 align="center">USB2LPT, List of successfully tested programs</h1>
+
+This list should grow with appropriate user feedback…
+<p>
+</p><table align="center" border="" width="90%" cellpadding="4"><tbody><tr><td bgcolor="#F0E0E0">
+ <b>Attention:</b> Using USB2LPT with <i>programming devices</i> may lead
+ to wrong or bad programmed chips!
+ The reason is lengthening of the programming pulse due to
+ longer parallel port access emulation time. The result depends on<ul>
+  <li>whether the PC software or the programming device
+   creates the programming pulse
+  </li><li>whether the chip requires timely exact pulses or not.
+   In general, ISP chips (newer micro controllers, or JTAG interfaces),
+   serial EEPROMs, and flash memories are excluded.
+ </li></ul>
+ <small>
+ If the length of programming pulse is important (e.g. for correct
+ programming in mass production), USB2LPT should not be used.
+ Furthermore, programming software should not be installed onto
+ too fast computers. Even when a true parallel port is available.
+ Depending on software quality,
+ this may lead to too short (and therefore unsafe) programming pulses.
+ </small></td></tr><tr><td bgcolor="#E0E0F0">
+ <b>Attention 2:</b> Although using USB2LPT with programming devices
+ is obvious, it is generally not recommended.
+ Programing times are much too long to get ready.
+ At the top I measured that the GALEP software needs some minutes(!)
+ for programming the smallest PIC (12F508).<br>
+ <a href="http://en.wikipedia.org/wiki/PCMCIA">PCMCIA and CardBus</a> parallel adapters do not have this disadvantage.
+ For <a href="http://en.wikipedia.org/wiki/ExpressCard">ExpressCard</a>, you <i>must</i> have the right type:
+ <abbr title="PCIexpress">PCIe</abbr> based, not USB based.
+</td></tr></tbody></table>
+
+<ul>
+ <li><b style="color:darkgreen">Chip programmers <i>(High-speed USB2LPT is highly recommended)</i></b><ul>
+  <li><b>AVRDUDE</b> (Command-line driven programmer for Atmel AVR, ATmega)<br>
+   In most cases you should use <code><b>-P lpt1</b></code> for specifying port address,
+   even when Windows&nbsp;XP' device manager lies and says „LPT3“.
+   AVRDUDE uses only 3 fixed port addresses for the names:<ul>
+    <li><code>lpt1 = 0x378</code>
+	</li><li><code>lpt2 = 0x278</code>
+	</li><li><code>lpt3 = 0x3BC</code>
+   </li></ul>
+   Speed: about 5&nbsp;% (ATmega16), 16&nbsp;IN operations per bit
+
+  </li><li><a href="https://heha.fwh.is/usb/USB2LPT/root/hs/PonyProg.zip/"><b>PonyProg2000</b></a>
+   (Freeware programmer esp. for PIC, ATmega, serial EEPROMs)<ul>
+   <li>The INI file must be modified to get PonyProg to work: change „AutoDetectPorts=NO“!
+  </li></ul>
+
+  </li><li><b>Xilinx iMPACT</b> (JTAG programmer esp. for Xilinx CPLD and FPGA)<ul>
+   <li>Built-in automatic port detection fails, therefore iMPACT needs the following environment variables:<ul>
+   <li><code>set XIL_IMPACT_ENV_LPT_BASE_ADDRESS=378</code> (according to setting of USB2LPT in Device Manager)
+   </li><li><code>set XIL_IMPACT_ENV_LPT_ECP_ADDRESS=778</code> (always LPT_BASE + 400h)
+   </li></ul>
+  <i>Where can I set environment variables under 2k/XP?</i><br>Here:
+   <b>Start→Settings→Control Panel→System→Enhanced(?)→Environment variables</b>
+  </li></ul>
+
+  </li><li><b>ispVM System</b> (use new driver), for ispLSI1016E (CPLD)
+  same performance as for true parallel port<p>
+
+  </p></li><li><b>ispLEVER</b> (ispVM system, from
+  <a href="http://www.latticesemi.com/" title="Lattice Semiconductor">Lattice</a>), good performance!<p>
+ 
+ 
+  </p></li><li><b>Willem Eprom 0.97ja</b>
+  <br>Report by Paul Baumann (translated):
+   <span style="background:#E0E0E0">
+    In Device Manager, properties for USB2LPT, tab “Emulation”,
+    groupbox “Redirection”, <i>all</i> three checkmarks must be set.
+    And LPT enhancement set to EPP 1.9</span>
+  <br>I think, the checkmark at “Debug Register” is sufficient,
+    and presumably SPP, if ECR is set to „unidirectional“.
+    (ECR default setting when shipped is „bidirectional“ = PS/2 Mode.)
+
+  </li><li><b>SP12</b> (Programmer for Atmel AVR,
+   <a href="http://www.xs4all.nl/~sbolt/e-spider_prog.html">http://www.xs4all.nl/~sbolt/e-spider_prog.html</a>)
+
+  </li><li><b>WinPIC</b>
+
+  </li><li>PIC programmer software from <a href="http://www.sprut.de/">www.sprut.de</a>
+
+  </li><li>MSP430 programming via <b>msp430-jtag</b>
+
+  </li><li><b>GALEP-4</b> (GALEP-3&nbsp;not tested),
+   but only with <a href="https://heha.fwh.is/usb/USB2LPT/galep4patch.zip">this patch</a>, <i>but <b>not recommended</b> because ultra-slow</i>.
+   However, a <a href="https://heha.fwh.is/usb/Programmierger%C3%A4te/GALEP-4/">64-bit capable driver</a> exists,
+   enabling running GALEP32.exe on Win64 machines.
+
+  </li><li><a href="https://heha.fwh.is/usb/Programmierger%C3%A4te/DataIO%202700/"><b>DataIO 2700</b></a> with acceptable 8× more time.
+   Follow link to see what to do more.
+  </li><li><b>Xeltek SuperPro Z</b>, it is not very fast, reading a 2732 takes about 20 seconds, while reading a 27C020 takes a few minutes…
+  <p><b><i>Evaluated settings:</i></b></p><ul>
+   <li>Debug Register Trap ON (without this you get a 'Communications Error')
+   </li><li>Read_Port_Uchar… doesn't matter
+   </li><li>Use write-back for Out… doesn't matter
+  </li></ul>
+  <b><i>Reported environment:</i></b> Windows 2000 under VM-Ware's Fusion running on MacBook Pro dual processor, allocated 500&nbsp;MB RAM for W2k.
+
+ </li></ul><p>
+ </p></li><li><b style="color:darkgreen">Amateur radio <i>(Low-Speed USB2LPT is often sufficient)</i></b><ul>
+  <li>PowerSDR and <b><a href="http://nonprofit-hasdr.110mb.com/indexe.html">SDR-1000</a></b> for radio amateurs
+  <br>Low-Speed is fully sufficient for this application!
+  <small><br>One amateur <a href="http://hm-sdr-1000.foren-city.de/topic,46,-usb-to-parallel-adapter.html">has posted</a>
+  problems with crystal-less version 1.6
+  and populated the 12000&nbsp;kHz crystal with 2x 22&nbsp;pF 0603 capacitors,
+  flashed the 1.5 firmware and was happy.</small><br>
+  <b>New (for Win64):</b> A replacement <a href="PortTalk/">PortTalk.dll</a>
+  is available that redirects I/O to USB2LPT while that's still not working
+  on driver (i.e. universal Ring0) level.
+  This very simple DLL can be seen as a reference implementation for the
+  <a href="api.en.htm">USB2LPT DeviceIoControl API</a>.
+
+  </li><li><b>Antenna analyzer</b> by(?) Gerd Koetter (see
+  <a href="http://www.qsl.net/iw3hev/Antenna%20Analyzer%201.8-60%20MHz-Eng.htm">here</a>)
+ 
+  </li><li><a href="http://www.sm5bsz.com/linuxdsp/linrad.htm">Linrad</a> release 3.15,
+  for radio amateurs, see <a href="http://www.sm5bsz.com/linuxdsp/hware/wse/parport.htm">here</a>
+
+ </li></ul><p>
+ </p></li><li><b style="color:darkgreen">Other hardware + software <i>(High-Speed USB2LPT is recommended for data-intensive applications)</i></b><ul>
+  <li>All of (my)
+   <a href="https://heha.fwh.is/usb/USB2LPT/root/hs/"><b>h#s</b> programs</a> (of course!)
+
+  </li><li>Analog Devices: <b>AD9834.exe</b>: Their original software won't run,
+   so I wrote a (much more improved)
+   <a href="https://heha.fwh.is/usb/USB2LPT/root/hs/freew#ad9834">replacement program</a>
+   that supports PCI and PCIexpress cards too.
+
+  </li><li><b>LabVIEW</b>
+
+  </li><li>Matlab: <code>digitalio('parallel','lpt1');</code> should run now
+
+  </li><li>Discolitez Deluxe32 – <i>Note also:</i><ul>
+   <li>There is a <a href="https://heha.fwh.is/usb/USB2LPT/root/hs/DLO_UsbPrn.zip">plugin</a>
+       available for normal USB→printer adapters that works for 8 outputs.
+   </li><li>For 32 outputs, there is a much-easier-to-use <a href="https://heha.fwh.is/usb/USB2LPT/root/hs/DLO_DeluxeUsb.zip">DeluxeUSB</a> solution.
+  </li></ul>
+  </li><li><b>Synfox frequency synthesizer via I²C</b>
+  <br><i>Environment:</i>Win XP in Parallels Desktop 3.0 Virtual Machine on Mac OSX 10.5.7&nbsp;on MacBook Pro
+
+  </li><li>Melexis <b>TH7122</b> and <b>MLX71122</b> (software settings: LPT2, 0x278,
+  reported by Jon GrosJean &lt;jgrosjean_at_ieee.org&gt;)
+ 
+  </li><li><a href="https://heha.fwh.is/usb/USB2LPT/RoboScope/">RoboScope</a>: Telescope positioner and earth rotation compensation.
+  The link points to my try to replace the original
+  <a href="http://en.wikipedia.org/wiki/GW-BASIC">GWBasic</a>
+  (<a href="http://en.wikipedia.org/wiki/MS-DOS">DOS</a>) program
+  by a C++ source having a true Win32 program,
+  but that attempt has ended due to missing testing facility.
+
+  </li><li><a href="https://heha.fwh.is/usb/Programmierger%C3%A4te/Wild%20GIF12/"><b>Wild GIF12</b></a> (Leica card reader for survey equipment)
+ </li></ul>
+</li></ul>
+
+
+<div id="give-freely-root-bcjindcccaagfpapjjmafapmmgkkhgoa" class="give-freely-root" data-extension-id="bcjindcccaagfpapjjmafapmmgkkhgoa" data-extension-name="JSON Formatter" style="display: block;"><template shadowrootmode="open"></template></div><footer><nav title="Navigation" class="slidein"><a href="https://heha.fwh.is/USB2LPT">Directory above (USB2LPT)</a></nav><hr><address><p id="date"><a href="https://heha.fwh.is/usb/USB2LPT/email?USB%20to%20Parallel%20converter%20-%20List%20of%20successfully%20tested%20programs">Henrik Haftmann</a>, created: <time datetime="2008-01-01">January 1. 2008</time> — last modified: <time datetime="2016-04-15">April 15. 2016</time><a class="suppress_before" href="https://de.wikipedia.org/wiki/Creative_Commons"><img src="./liste.en_files/CC_BY_icon.svg" align="right" title="gemeinfrei bei Namensnennung"></a>
+</p></address></footer></body></html>

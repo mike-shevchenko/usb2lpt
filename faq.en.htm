@@ -76,7 +76,7 @@ so you often need USB2LPT only for “doping” the typical 1 KByte bootloader
 (which takes affordable 20 seconds via USB2LPT),
 or for some troubleshooting (and — in case of AVR — setting fuses).
 </p><p>
-Specialized software aware to USB2LPT (i.e. that uses the <a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm">USB2LPT API</a>)
+Specialized software aware to USB2LPT (i.e. that uses the <a href="api.en.htm">USB2LPT API</a>)
 can be much faster, up to roughly 20 MByte/s, by replacing parts of the
 firmware in controller's RAM on-the-fly.
 
@@ -113,9 +113,9 @@ While there is a 64 bit driver available,
 it does not feature the debug register redirection.
 Furthermore, the well-worked READ/WRITE_PORT_UCHAR redirection cannot work.
 There are simply no kernel functions to trap.
-However, the property sheet and the <a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm">API</a> is fully functional,
+However, the property sheet and the <a href="api.en.htm">API</a> is fully functional,
 so you can access the port pins with specialized software, e.g.
-<a href="https://heha.fwh.is/usb/USB2LPT/root/hs/inpout32-hs.zip/Release/inpout32.dll">my special build of inpout32.dll</a>.
+<a href="inpout32-hs/">my special build of inpout32.dll</a>.
 <!--
 To install and use this driver, you must disable Driver Verification Enforcement at every startup.
 The procedure is:<ul>
@@ -317,7 +317,7 @@ However, there are some issues to point to before deciding to use USB2LPT:<ul>
 </li></ul>
 <br>
 Hobbyists who are fraud programming microcontrollers should give
-<a href="https://heha.fwh.is/usb/USB2LPT/faq.en.htm#DIY" class="lb" title="see above">USB→Printer adapters</a> (see above) a try.
+<a href="#DIY" class="lb" title="see above">USB→Printer adapters</a> (see above) a try.
 Advantages:<ul>
 <li>No speed problem
 </li><li>No acquisition problem (of those adapters)
@@ -410,7 +410,7 @@ May it's possible to speed up changing the accessing software?
 </dt><dd>
 Yes, of course. You can concatenate IN instructions to two USB packets.
 You send data blocks, according to the documentation in this
-<a href="https://heha.fwh.is/usb/USB2LPT/usb2lptf.zip/USB2LPT.A51?auto=ASM">source code</a>,
+<a href="usb2lpt/">source code</a>,
 to the converter, and get the answers in a multi-byte IN block.<br>
 Each instruction consumes about 1&nbsp;µs. Delayed operation can be achieved
 using WAIT instructions (20h, thereafter the delay time in units of 4&nbsp;µs)
@@ -537,7 +537,7 @@ For AMD64 versions, unluckily, no <code>READ/WRITE_PORT_UCHAR/USHORT/ULONG</code
 so only the debug register trap can ever work, but that's still hard to implement.
 Because there is driver certification enforcement in effect,
 there is only a handful of drivers available accessing port addresses.
-The well-known <a href="https://heha.fwh.is/usb/USB2LPT/root/hs/inpout32-hs.zip/">INPOUT32.DLL</a>
+The well-known <a href="inpout32-hs/">INPOUT32.DLL</a>
 (or INPOUTX64.DLL) contains such certified drivers.
 The DLL code silently installs and loads (and unloads) that driver
 when the DLL is loaded or unloaded.

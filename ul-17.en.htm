@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!-- saved from url=(0044)https://heha.fwh.is/usb/USB2LPT/ul-17.en.htm -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="keywords" lang="de" content="USB, LPT, Parallel, Parallelport, Druckerport, Konverter, Adapter">
+<meta name="keywords" lang="en" content="USB, LPT, parallel, parallel port, printer port, converter, adaptor">
+<meta name="date" content="2007-10-28">
+<link rel="alternate" href="https://heha.fwh.is/usb/USB2LPT/ul-17.de.htm">
+<link rel="next" href="https://heha.fwh.is/usb/USB2LPT/ul12">
+<link rel="stylesheet" href="./ul-17.en_files/h.css">
+<script src="./ul-17.en_files/h.js.download"></script> 
+<title>Converter From USB To Parallel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="https://heha.fwh.is/icons/laptop.png"></head><body><div id="LangSel" class="noprint">&nbsp;<a class="nul" href="https://heha.fwh.is/usb/USB2LPT/ul-17.de.htm" title="Deutscher Originaltext">🇩🇪</a></div><div id="NavBar">Content</div><nav id="Nav"><ol><li><a href="#1">Electronic Components</a></li><li><a href="#2">Software</a></li><li><a href="#3">Solder Jumper</a></li></ol><div id="X" title="Close content overlay">X</div></nav>
+
+<div class="r"><img src="./ul-17.en_files/foto-13.jpg" alt="Complete USB2LPT 1.7 photo"></div>
+<p>
+<i>Keywords:</i> USB, LPT, parallel, parallel port, printer port, converter, adaptor
+ </p><ul style="color:darkgreen;background:#F0F0F0;font-weight:bold;overflow:hidden">
+  <li>Converter from USB to parallel port (25&nbsp;pin SubD receptacle)
+   with hardware virtualization at input/output instruction level
+  </li><li>Supports all parallel port modes named SPP, EPP and ECP, 16 Byte FIFO depth
+  </li><li>USB High Speed (480 Mbit/s signaling; 8 kByte/s at input/output instructions)
+  </li><li>Multifunction device with extra USB to parallel printer support
+   in accordance to USB printer class specification
+  </li><li>Full open-source, even for schematics and PCBs
+ </li></ul>
+
+To <a href="index.en.htm">USB2LPT — Overview</a>
+
+<h1 align="center">USB2LPT – Cloning instructions for Release 1.7</h1>
+
+<div class="r"><img src="./ul-17.en_files/ul-17.pov.png" alt="Eagle3d picture"></div>
+
+<blockquote style="background:#FFFFE0;padding:4px;-moz-border-radius:12px;border-radius:12px;border:2px solid #FFFF00;overflow:hidden">
+<span style="float:right;width:110px;height:40px;background:url(//s.ytimg.com/yt/imgbin/www-master-vflNOya8A.png) -34px -178px"></span>
+<b>New:</b> The do-it-yourself process is available at <a href="http://www.youtube.com/results?search_query=usb2lpt&amp;aq=f">YouTube</a>!
+  (Three clips, running time ca. 30 minutes, some German comments, English subtitling)<ol>
+ <li><a href="http://www.youtube.com/watch?v=Fv2mEQS7awE">Solder paste applying, SMD population</a> 
+ </li><li><a href="http://www.youtube.com/watch?v=KU3grl6Nu2U">SMD population (cont.), Reflow process, SubD receptacle</a>
+ </li><li><a href="http://www.youtube.com/watch?v=M1rduCG0QLY">USB receptacle, Quartz crystal, LEDs, Housing shell, Final check</a>
+</li></ol>
+</blockquote>
+
+<section class="collapsed" id="1"><h2>Electronic Components<a class="hl" href="#1" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+Almost identical to <a href="https://heha.fwh.is/usb/USB2LPT/ul-13.en.htm">Release 1.3</a>.
+Except voltage regulator:<p>
+</p><table border="" cellspacing="0" cellpadding="4">
+<tbody><tr><th>instead</th><th>now</th><th>Marking</th><th>GND current</th><th>output current</th><th>options</th><th>attention
+</th></tr><tr><td rowspan="6">LD1117S33</td><td>TPS7<u>97</u>33DCK</td><td>ATF</td><td>1,3&nbsp;µA</td><td>&nbsp;50&nbsp;mA (190&nbsp;mA <i>typ.</i>)</td><td>PowerGood output</td><td rowspan="3">Populate <b>C4</b>
+</td></tr><tr><td>TPS7<u>15</u>33DCK<br>TPS7<u>15</u>33QDCK</td><td>AQI<br>ANW</td><td rowspan="2">3,2&nbsp;µA</td><td>&nbsp;50&nbsp;mA (125&nbsp;mA <i>min.</i>)</td><td rowspan="2">–
+</td></tr><tr><td>TPS7<u>14</u>33DCK</td><td>CVH</td><td>&nbsp;80&nbsp;mA (100&nbsp;mA <i>min.</i>)
+</td></tr><tr><td>TPS7<u>70</u>33DBV</td><td>PCXI</td><td rowspan="2">17&nbsp;µA</td><td>&nbsp;50&nbsp;mA (340&nbsp;mA <i>typ.</i>)</td><td rowspan="3">inverse enable input<br>(not used here)
+	</td><td rowspan="3">Do <i>not</i> populate <b>C4</b>!
+	<br>Instead, populate <b>electrolytic or tantalum capacitor 10&nbsp;µF</b> into two holes beneath <b>C4</b>.
+	<br>This is because <a href="http://en.wikipedia.org/wiki/Equivalent_series_resistance">ESR</a> must have a minimum for stable operation.
+</td></tr><tr><td>TPS7<u>88</u>33DBV</td><td>PGTI</td><td>150&nbsp;mA (350&nbsp;mA <i>typ.</i>)
+</td></tr><tr><td>TPS7<u>69</u>33DBV</td><td>PCNI</td><td>18&nbsp;µA</td><td>100&nbsp;mA (350&nbsp;mA <i>typ.</i>)
+</td></tr></tbody></table>
+<small>Values in parentheses are for internal current limitation</small>
+<p>
+The overall current consumption of this device in USB idle state
+should now be about 500&nbsp;µA, as required by USB specification.
+<br>
+(The EZUSB-FX2 chip itself contributes 500&nbsp;µA:-)
+
+</p><figure>
+<img src="./ul-17.en_files/ul-17i1.jpg" alt="Inside Device"><img src="./ul-17.en_files/ul-17i2.jpg" alt="Inside Device"><br><i>Populated PCB. The capacitor <b>C4</b> is exceptionally populated with an SMD tantalum capacitor</i>
+</figure>
+
+</span></section><section class="collapsed" id="2"><h2>Software<a class="hl" href="#2" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+
+<ul>
+<li><a href="ul-17.gif">Circuit Diagram</a> and
+<a href="ul-17.en_files/ul-17.png">PCB Silkscreen</a>,
+<a href="ul-17/">Source</a> <a href="ul-17/"><img src="./ul-17.en_files/auge.gif" align="top" alt="Eye" title="browse zipfile" border="0"></a> for PCB software
+ <a href="http://www.cadsoft.de/cgi-bin/download.pl?page=/home/cadsoft/html_public/download.htm.de&amp;dir=eagle/program/4.1">Eagle</a>
+<p>
+</p></li><li>Firmware same as <a href="https://heha.fwh.is/usb/USB2LPT/ul-13.en.htm">Revision 1.3</a>
+</li></ul>
+
+</span></section><section class="collapsed" id="3"><h2>Solder Jumper<a class="hl" href="#3" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+Same as for <a href="https://heha.fwh.is/usb/USB2LPT/ul-14.en.htm">Revision 1.4</a>.<p>
+
+
+</p><div id="give-freely-root-bcjindcccaagfpapjjmafapmmgkkhgoa" class="give-freely-root" data-extension-id="bcjindcccaagfpapjjmafapmmgkkhgoa" data-extension-name="JSON Formatter" style="display: block;"><template shadowrootmode="open"></template></div></span></section><footer><nav title="Navigation"><a href="https://heha.fwh.is/usb/USB2LPT/ul12">Next article (ul12)</a><a href="https://heha.fwh.is/USB2LPT">Directory above (USB2LPT)</a></nav><hr><address><p id="date"><a href="https://heha.fwh.is/usb/USB2LPT/email?Converter%20From%20USB%20To%20Parallel">Henrik Haftmann</a>, created: <time datetime="2007-10-28">October 28. 2007</time> — last modified: <time datetime="2018-03-15">March 15. 2018</time><a class="suppress_before" href="https://de.wikipedia.org/wiki/Creative_Commons"><img src="./ul-17.en_files/CC_BY_icon.svg" align="right" title="gemeinfrei bei Namensnennung"></a>
+</p></address></footer></body></html>

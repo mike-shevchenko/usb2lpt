@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<!-- saved from url=(0045)https://heha.fwh.is/usb/USB2LPT/vorbei.en.htm -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="keywords" lang="en" content="debug register, dongle, parallel port, emulator">
+<title>In/Out Target Missed</title>
+</head><body>
+
+<a href="http://en.wikipedia.org/wiki/Software_protection_dongle">Software protection keys</a>
+(also called Dongles) most often reject to work with USB2LPT
+(or even dongle emulators, e.g. <a href="https://heha.fwh.is/usb/USB2LPT/root/hs/dknack_.exe">this one</a>).
+
+<h2 align="center">In/Out Target Missed</h2>
+Current dongle drivers (.SYS or .VxD) contain the following code sequence:
+<pre style="background:#E0E0E0">	mov	eax,cr4
+	btr	eax,3		<i>;switch off PENTIUM Debug Extension (DE)</i>
+	mov	cr4,eax
+	in	al,dx		<i>;or out dx,al</i>
+</pre>
+
+As you can see here, they switch back the processor back to 486 mode
+directly before executing any IN or OUT instruction to the parallel port.
+A 486 processor doesn't support I/O breakpoints. Bingo!
+<p>
+This switch-back code cannot be protected by another hardware breakpoint.
+A lucky hacker may try to scan the kernel memory for such code sequences
+by a timer procedure.
+</p><p>
+The one-and-only possible solution to cope with such code is using a
+<a href="http://en.wikipedia.org/wiki/Virtual_machine">Virtual Machine</a> (VM).
+Typical VM software copes with this <i>Debug Extension</i> bit as it doesn't permit the guest system to put the host system back to 486 mode.
+In this way, the protected software can see the dongle
+while USB2LPT.SYS driver is running in either the guest or host system (try yourself!).
+
+</p><div id="give-freely-root-bcjindcccaagfpapjjmafapmmgkkhgoa" class="give-freely-root" data-extension-id="bcjindcccaagfpapjjmafapmmgkkhgoa" data-extension-name="JSON Formatter" style="display: block;"><template shadowrootmode="open"></template></div></body></html>

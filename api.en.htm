@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="./api.en_files/h.css"> 
 <script src="./api.en_files/h.js.download"></script>
 <title>API for USB2LPT</title>
-<meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="https://heha.fwh.is/icons/laptop.png"><script type="text/javascript" src="./api.en_files/sh.js.download"></script></head><body style="overflow-x: auto;"><input type="checkbox" id="linewrap"><input type="checkbox" id="linenumb"><div id="LangSel" class="noprint">&nbsp;<a class="nul" href="https://heha.fwh.is/usb/USB2LPT/api.de.htm" title="Deutscher Originaltext">🇩🇪</a></div><div id="NavBar">Content</div><nav id="Nav"><ol><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1">Parallel port compatible access</a><ol><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.1">Opening of USB2LPT</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.2">A single OUT access</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.3">A single IN access</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.4">Combined access</a></li></ol></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#2">Extended port access</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#3">Wait Cycles and Bit Access</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#4">Planned: GPIF boosted High-Speed  transfers</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#5">Not planned: Use of peripheral features </a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#6">Read and write RAM, EEPROM, or Flash</a></li></ol><div id="X" title="Close content overlay">X</div></nav>
+<meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="https://heha.fwh.is/icons/laptop.png"><script type="text/javascript" src="./api.en_files/sh.js.download"></script></head><body style="overflow-x: auto;"><input type="checkbox" id="linewrap"><input type="checkbox" id="linenumb"><div id="LangSel" class="noprint">&nbsp;<a class="nul" href="https://heha.fwh.is/usb/USB2LPT/api.de.htm" title="Deutscher Originaltext">🇩🇪</a></div><div id="NavBar">Content</div><nav id="Nav"><ol><li><a href="#1">Parallel port compatible access</a><ol><li><a href="#1.1">Opening of USB2LPT</a></li><li><a href="#1.2">A single OUT access</a></li><li><a href="#1.3">A single IN access</a></li><li><a href="#1.4">Combined access</a></li></ol></li><li><a href="#2">Extended port access</a></li><li><a href="#3">Wait Cycles and Bit Access</a></li><li><a href="#4">Planned: GPIF boosted High-Speed  transfers</a></li><li><a href="#5">Not planned: Use of peripheral features </a></li><li><a href="#6">Read and write RAM, EEPROM, or Flash</a></li></ol><div id="X" title="Close content overlay">X</div></nav>
 
 <h1 align="center"><img src="./api.en_files/usb.gif" alt="USB-Logo">
  The API for USB2LPT (Application Programmer's Interface)
@@ -39,7 +39,7 @@ programming languages as C, Delphi, VisualBasic, VBA, and LabVIEW.
 (or <code>"LPT2"</code> if second device etc.),
 and transfer data over the <b>DeviceIoControl</b> Windows API. 
 
-</p><section class="collapsed" id="1"><h2>Parallel port compatible access<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+</p><section class="collapsed" id="1"><h2>Parallel port compatible access<a class="hl" href="#1" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
 
 This access enables using USB2LPT like a real 
 parallel port (inclusive ECP and EPP if needed),
@@ -50,7 +50,7 @@ you don't need administrative privileges, and you won't open a security hole.
 Note that <code>InpOut32.DLL</code> opens a security hole by itself;
 application code may format your hard disk.</small>
 
-<section class="collapsed" id="1.1"><h3>Opening of USB2LPT<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.1" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h3><span>
+<section class="collapsed" id="1.1"><h3>Opening of USB2LPT<a class="hl" href="#1.1" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h3><span>
 
 A global variable <code>haccess</code> holding the handle to USB2LPT device is handy.
 
@@ -94,7 +94,7 @@ that is compatible with USB2LPT.
 So an application software may use the same security-hole-free API for
 parallel ports later. 
 
-</span></section><section class="collapsed" id="1.2"><h3>A single OUT access<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.2" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h3><span>
+</span></section><section class="collapsed" id="1.2"><h3>A single OUT access<a class="hl" href="#1.2" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h3><span>
 This function looks like follows:
 
 <pre class="c"><line id="l29"><b>void</b> outb(BYTE a, BYTE b) {
@@ -125,7 +125,7 @@ You may wondering that a DLL call is much simpler.
 But beware! For opening a DLL, you most often need extra coding with <code>LoadLibrary</code> and <code>GetProcAddress</code>!
 
 
-</p></span></section><section class="collapsed" id="1.3"><h3>A single IN access<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.3" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h3><span>
+</p></span></section><section class="collapsed" id="1.3"><h3>A single IN access<a class="hl" href="#1.3" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h3><span>
 This function looks like follows:
 
 <pre class="c"><line id="l36">BYTE inb(BYTE a) {
@@ -155,12 +155,12 @@ Note that one bit at status port (<b>a</b>=1)
 and three bits at control port (<b>a</b>=2) are inverted!
 You can avoid inversion by an “extra” register, see later.
 <p>
-See this <a href="https://heha.fwh.is/usb/USB2LPT/PortTalk.zip">a bit too simple wrapper DLL implementation</a>
-<a href="https://heha.fwh.is/usb/USB2LPT/PortTalk.zip/"><img src="./api.en_files/auge.gif" align="top" alt="[Auge]" title="Browse archive" border="0"></a>
+See this <a href="file://PortTalk/">a bit too simple wrapper DLL implementation</a>
+<a href="href="file://PortTalk/"><img src="./api.en_files/auge.gif" align="top" alt="[Auge]" title="Browse archive" border="0"></a>
 as a reference.
 
 
-</p></span></section><section class="collapsed" id="1.4"><h3>Combined access<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.4" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h3><span>
+</p></span></section><section class="collapsed" id="1.4"><h3>Combined access<a class="hl" href="#1.4" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h3><span>
 Singe accesses have no improvement for speed compared to port access trapping!
 The opposite may the case, OUT accesses are <i>not</i> cached and concatenated automatically.
 <p>
@@ -189,7 +189,7 @@ Bear in mind that reading from data port does <i>not</i> read the pin states if 
 Instead, the <a href="http://en.wikipedia.org/wiki/FIFO">FIFO</a> is read.
 
 
-</span></section></span></section><section class="collapsed" id="2"><h2>Extended port access<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#2" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+</span></section></span></section><section class="collapsed" id="2"><h2>Extended port access<a class="hl" href="#2" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
 
 A USB2LPT device ist a Multi-I/O device with 17 digital I/Os;
 newer revisions have even 20 useable I/Os.<br>
@@ -246,10 +246,10 @@ The regular output HIGH level is 5&nbsp;V. If you need 3.3&nbsp;V outputs,
 you should modify the USB2LPT device by inserting a voltage-dropping dual diode
 <b>D2</b> like BAV199 (cut <b>SJ3</b>),
 and change the USB pullup resistor <b>R1</b> to 1.5&nbsp;kΩ.
-See <a href="https://heha.fwh.is/usb/USB2LPT/ul-16.gif">schematic</a>.
+See <a href="ul-16.gif">schematic</a>.
 </p>
 
-</span></section><section class="collapsed" id="3"><h2>Wait Cycles and Bit Access<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#3" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+</span></section><section class="collapsed" id="3"><h2>Wait Cycles and Bit Access<a class="hl" href="#3" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
 Combination of many OUT and IN accesses into one packet
 may require some sort of program controlling.
 
@@ -275,7 +275,7 @@ Nesting may not be allowed.
 
 </p><div style="border:dashed 1px gray;padding:2px 1em">
 <i style="color:gray;font-weight:bold">High-Speed only:</i>
-<section class="collapsed" id="4"><h2>Planned: GPIF boosted High-Speed (48 MByte/s) transfers<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#4" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+<section class="collapsed" id="4"><h2>Planned: GPIF boosted High-Speed (48 MByte/s) transfers<a class="hl" href="#4" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
 
 High-Speed transfers are such using the GPIF (General Purpose Interface).
 Data rates in maximum speed will become possible, even via the 8-bit bus.
@@ -293,12 +293,12 @@ the normal parallel-port emulation is disabled.
 The exact specification will be made later.
 </p></span></section></div>
 
-</span></section><section class="collapsed" id="5"><h2>Not planned: Use of peripheral features (Timer, ADC etc.)<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#5" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+</span></section><section class="collapsed" id="5"><h2>Not planned: Use of peripheral features (Timer, ADC etc.)<a class="hl" href="#5" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
 Such use is by far much more than what USB2LPT is planned for,
 and is not compatible between Low-Speed, Full-Speed and High-Speed.
 If someone need such, one can extend the firmware. See below.
 
-</span></section><section class="collapsed" id="6"><h2>Read and write RAM, EEPROM, or Flash<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#6" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+</span></section><section class="collapsed" id="6"><h2>Read and write RAM, EEPROM, or Flash<a class="hl" href="#6" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
 <i>Fully implemented. See “brenner.c”.</i>
 <p>
 For Full-Speed and High-Speed devices, the API can access:</p><ul>

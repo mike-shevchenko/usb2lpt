@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<!-- saved from url=(0044)https://heha.fwh.is/usb/USB2LPT/ul-16.en.htm -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="date" content="2009-01-25">
+<link rel="alternate" href="https://heha.fwh.is/usb/USB2LPT/ul-16.de.htm">
+<link rel="alternate" href="https://heha.fwh.is/usb/USB2LPT/ul-16.jp.htm">
+<link rel="next" href="https://heha.fwh.is/usb/USB2LPT/ul-17.en">
+<link rel="stylesheet" href="./ul-16.en_files/h.css">
+<script src="./ul-16.en_files/h.js.download"></script> 
+<title>Converter From USB To Parallel 1.6</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="https://heha.fwh.is/icons/laptop.png"></head><body><div id="LangSel" class="noprint">&nbsp;<a class="nul" href="https://heha.fwh.is/usb/USB2LPT/ul-16.de.htm" title="Deutscher Originaltext">🇩🇪</a>&nbsp;<a class="nul" href="https://heha.fwh.is/usb/USB2LPT/ul-16.jp.htm" title="日本語">🇯🇵</a></div><div id="NavBar">Content</div><nav id="Nav"><ol><li><a href="#1">Electronic Components</a></li><li><a href="#2">The LED</a></li><li><a href="#sw">Software</a></li><li><a href="#diy">Preparations</a></li><li><a href="#5">Making-Of</a></li><li><a href="#6">Known PCB bugs</a></li><li><a href="#7">Solder jumpers</a></li></ol><div id="X" title="Close content overlay">X</div></nav>
+
+<div class="r"><img src="./ul-16.en_files/foto-15.jpg" alt="Complete USB2LPT6 photo"><br>(The D-Sub connector is female.)</div>
+<p>
+ <i>Keywords:</i>
+  USB, LPT, parallel, parallel port, printer port, converter, adaptor
+
+ </p><ul style="color:darkgreen;background:#F0F0F0;font-weight:bold;overflow:hidden">
+  <li>Converter from USB to parallel port (25&nbsp;pin SubD receptacle)
+      with hardware virtualization at input/output instruction level
+  </li><li>Supports all parallel port modes named SPP, EPP and ECP, 16 Byte FIFO depth
+  </li><li>USB Low Speed (1.5 Mbit/s signaling; 1 kByte/s for input/output instructions)
+  </li><li>Supports USB suspend mode with reduced power consumption
+  </li><li>Full open-source, even for schematics and PCBs
+ </li></ul>
+ To <a href="index.en.htm">USB2LPT — Overview</a>
+
+<h1 align="center">USB2LPT – Cloning instructions for Release 1.6</h1>
+
+This device is almost the same as <a href="https://heha.fwh.is/usb/USB2LPT/ul-15.en.htm">Release 1.5</a>.
+<br>
+For high-speed USB, there is a <a href="ul-17.en.htm">Release 1.7</a>.
+<p>
+If 3.3V operation of ATmega is wanted, a user can now populate a dual diode BAV199
+instead of the LD1117 of the previous version.
+This enables drawing less than 500&nbsp;µA of standby current in this case.
+</p><p>
+<b style="color:red"><img src="./ul-16.en_files/attention.gif"> The <i>firmware</i> from december 2010&nbsp;to february 2012&nbsp;is not compatible to Windows Vista and Windows 7 (32 and 64 bit) – please update!</b>
+
+
+</p><section class="collapsed" id="1"><h2>Electronic Components<a class="hl" href="#1" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+You need:
+<p>
+</p><table border="" cellspacing="0" cellpadding="4">
+<tbody><tr><th>Pieces</th><th>Description</th><th>Reichelt Order Code</th><th>Price in € (2007)
+</th></tr><tr><td>1</td><td>ATmega8 in TQFP32 package</td><td>ATMEGA 8-16&nbsp;TQ</td><td>1.70
+</td></tr><tr><td>1</td><td>Ceramic capacitor 100&nbsp;nF 0603</td><td>X7R-G0603 100n</td><td>0.051
+</td></tr><tr><td>1</td><td>Resistor array 220 Ω 1206</td><td>BCN16 220</td><td>0.02
+</td></tr><tr><td>1</td><td>Resistor 10&nbsp;kΩ 0805</td><td>SMD-0805 10k</td><td>0.10
+</td></tr><tr><td>1</td><td>Electrolytic capacitor 10&nbsp;µF</td><td>rad 10/35</td><td>0.041
+</td></tr><tr><td>1</td><td>Yellow LED 3&nbsp;mm </td><td>LED 3mm ge</td><td>0.051
+</td></tr><tr><td>1</td><td>SubD receptacle 25&nbsp;pin</td><td>D-SUB BU 25</td><td>0.15
+</td></tr><tr><td>1</td><td>USB receptacle MiniB through-hole</td><td>USB BWM</td><td>0.50
+</td></tr><tr><td>1</td><td>Housing</td><td>Kappe CG25G</td><td>0.13
+</td></tr><tr><td>1</td><td>USB cable 1&nbsp;m</td><td>AK 673-A</td><td>0.98
+</td></tr><tr><td>1</td><td>Two-sided <a href="ul-16.en_files/ul-16.png">PCB</a> (see below)</td><td><i>UL16LP</i></td><td><i>1.00
+</i></td></tr></tbody></table>
+<p>
+It's not hard to populate this PCB.
+
+</p><p align="center">
+<img src="./ul-16.en_files/ul-16i1.jpg" alt="Photo upper side"> &nbsp; <img src="./ul-16.en_files/ul-16i2.jpg" alt="Photo lower side"><br><i>(Sufficiently) populated PCB</i>
+</p>
+
+</span></section><section class="collapsed" id="2"><h2>The LED<a class="hl" href="#2" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+The yellow multi-function LED shows following states:<ul>
+<li>off:<ul>
+ <li>No power supply (cable broken or similar)
+ </li><li>USB2LPT not recognized by computer
+ </li><li>USB Standby mode - e.g. at notebook's suspend mode
+ </li><li>USB2LPT in bootloader mode
+</li></ul>
+</li><li>on:<ul>
+ <li>USB2LPT active, output drivers enabled, inputs with pull-up resistors
+</li></ul>
+</li><li>flashing:<ul>
+ <li>fast: USB BULK or INTERRUPT transfers (redirected IN and OUT instructions; normal operation)
+ </li><li>slow: USB CONTROL transfers (mostly initiated by Windows)
+</li></ul>
+</li></ul>
+
+</span></section><section class="collapsed" id="sw"><h2>Software<a class="hl" href="#sw" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+<ul>
+<li><a href="ul-16.gif">Schematic</a> and
+<a href="ul-16.en_files/ul-16.png">PCB</a>,
+<a href="ul-16/">Source</a> <a href="ul-16/"><img src="./ul-16.en_files/auge.gif" align="top" alt="Eye" title="Browse" border="0"></a>
+</li><li>
+<span style="color:green">For Windows driver and AVR firmware, see
+<a href="index.en.htm#driver">page above</a>, and how-to-use instructions.</span>
+<br>
+<a href="usb2lpt/src/firmware/USB2LPT6/">
+<img src="./ul-16.en_files/auge.gif" align="top" alt="Eye" title="Browse" border="0">
+Here you can browse the firmware source in your web browser.</a>
+</li></ul>
+Here are some notes about firmware implementation: <img title="Hier klicken für Zusatzinformation" src="./ul-16.en_files/plus.gif"><span class="invis"> 
+<blockquote style="background:#F0F0F0;padding:4px;-moz-border-radius:12px;border-radius:12px;border:2px solid #C0C0C0">
+The current USB2LPT Low-Speed (1.6) firmware implementation has many ways for I/O transaction.
+However, the driver (usb2lpt.sys) preferes only one, the oldest and still fastest way, using two BULK pipes.
+One BULK OUT for addresses and output (write) data, another BULK IN for input (read) data.
+Refer to <a href="api.en.htm"><code>DeviceIoControl()</code> based API</a> for understanding.
+<p>
+The other ways for I/O transactions exist for following reasons:</p><ul>
+<li>The very simple and low-performance EP0 based for one Linux user (Henning Paul).
+  Contrary to all other interfaces, it has no ECP/EPP support at all.
+<br><i>I never used this interface.</i><p>
+</p></li><li>The INTERRUPT OUT + IN alternative for Linux, Vista, Win7 to conform
+  to USB standard which forbids BULK for low-speed USB devices.
+  (USB2LPT was developed for full-speed AN2313 controller.)
+  The device is preconfigured to use INTERRUPT instead of BULK.
+  This works on all known systems but is at least 8 times slower than BULK.
+  Activating BULK will remove that slowdown but will render the entire device
+  as defective in Windows Vista, 7, 8, and newer, and Linux.
+<br><i>The usb2lpt.sys driver supports both BULK and INTERRUPT pipes.</i><p>
+</p></li><li>The advanced EP0 based as a faster alternative to INTERRUPT pipes.
+<br><i>The driver currently doesn't use this way, but it's planned.</i><p>
+</p></li><li>The HID (Human Interface Device) way to overcome the driver
+  certification trouble on Win64 systems.
+<br><i>The driver cannot use this way because Windows loads its generic
+  HID driver for this interface (that omits certification hassle).
+  This interface is for USB2LPT-adopted
+  <a href="inpout32-hs/"><code>inpout32.dll</code></a>
+  and similar port access libraries.</i>
+  Note that most parallel port accessing software will not run on 64 bit systems,
+  even with a true parallel port.
+  In such cases, requiring to use InpOut32.dll is not a limitation.
+</li></ul>
+</blockquote>
+</span>
+
+</span></section><section class="collapsed" id="diy"><h2>Preparations<a class="hl" href="#diy" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+<ul>
+ <li>Drill holes into SubD shell for LED
+ </li><li>Label the shell
+ </li><li>Bend pins of USB receptacle straight – see <a href="ul-16.en_files/ul-13v.jpg">picture</a>
+ </li><li>Trim pins of LED and electrolytic capacitor to about 1&nbsp;cm length
+ </li><li>Download and install <b><i>either</i></b>
+ <b><a href="https://heha.fwh.is/usb/USB2LPT/root/hs/PonyProg.zip/">PonyProg</a> <i>or</i>
+ <a href="http://winavr.sourceforge.net/">WinAVR</a></b>
+ </li><li><b>PonyProg</b>: Setup interface
+  <a href="https://heha.fwh.is/usb/USB2LPT/PonyProg-Config.png">as shown here</a>,
+  check by connecting the <a href="ul-16.en_files/ul-pa.gif">programming adapter</a>
+  (this checks for connection between Pin 2 and Pin 12),
+  invoke Setup→Calibration
+</li></ul>
+
+</span></section><section class="collapsed" id="5"><h2>Making-Of<a class="hl" href="#5" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+
+<blockquote style="background:#FFFFE0;padding:4px;-moz-border-radius:12px;border-radius:12px;border:2px solid #FFFF00">
+<span style="float:right;width:110px;height:40px;background:url(//s.ytimg.com/yt/imgbin/www-master-vflNOya8A.png) -34px -178px"></span>
+<b>New:</b> The do-it-yourself process for the similar 1.7 version is available at <a href="http://www.youtube.com/results?search_query=usb2lpt&amp;aq=f">YouTube</a>!
+  (Three parts, running time ca. 30 minutes, German comments, English subtitling)<ol>
+ <li><a href="http://www.youtube.com/watch?v=Fv2mEQS7awE">Solder paste applying, SMD population</a>
+ </li><li><a href="http://www.youtube.com/watch?v=KU3grl6Nu2U">SMD population (cont.), Reflow process, SubD receptacle</a>
+ </li><li><a href="http://www.youtube.com/watch?v=M1rduCG0QLY">USB receptacle, LED, Housing shell, Final check</a>
+</li></ol>
+</blockquote>
+
+<ul>
+ <li>put SMD cream, 4 SMD components, make a
+  <a href="index.en_files/reflow.jpg">reflow process</a> – or solder by hand
+ </li><li>Check for short circuit between 5 volts and ground
+ </li><li>press and solder SubD receptacle keeping ½ mm gap between PCB and SubD shroud
+ </li><li>Align and solder USB receptacle (see <a href="ul-16.en_files/ul-13v.jpg">helper tool</a>),
+  solder the pins with lowest possible iron temperature
+ </li><li>Populate electrolytic capacitor as flat as possible
+ </li><li>Align and solder the LED using the shell, watch for right polarity
+ </li><li>Check for short circuit between 5 volts and ground again
+ </li><li>Check “operation” by connecting the USB cable, must show as
+  “inoperational USB device”, this is the power supply for programming
+  the bootloader
+ </li><li>Connect <a href="ul-16.en_files/ul-pa.gif">programming adapter</a> to an old-style
+  parallel port and program the bootloader, <b><i>either</i></b>
+ <ul>
+  <li>PonyProg: load <code><b>main.hex</b></code>, write,
+   set fuses <b style="color:green">exactly</b> as <a href="usb2lpt/src/firmware/USB2LPT6/PonyProg%20Fuses.png?bin=PNG">shown here</a>
+  <br><i style="color:red">Do not twiddle with the fuses without knowledge! You may make the ATmega unaccessible to PonyProg and all other low-voltage serial programmers!</i>
+  <br><b><i>or</i></b>
+  </li><li>WinAVR: invoke <code><b>make prog</b></code>
+   (directory <code><b>src/firmware/USB2LPT6/bootloadHID</b></code>)
+ </li></ul>
+ <small>If your programming software doesn't recognize the right controller, check:
+ <ul>
+  <li>Programming adapter soldered correctly?
+  </li><li>Programming adapter used in correct direction?
+  </li><li>Solder jumper SJ2 (still) connected?
+  </li><li>Pins of SubD25 socket soldered correctly?
+  </li><li>Microcontroller soldered in correct alignment and angle?
+   (If wrong, remove with a hot-air gun.
+    If 180° wrong, use <i>new</i> ATmega8.)
+  </li><li>Mikrocontroller soldered without shorts?
+ </li></ul></small>
+ </li><li>Cycle power to USB2LPT,
+ let install driver <code><b>usb2lpt.inf</b></code>.
+  The Bootloader (
+  <a href="http://www.obdev.at/products/vusb/bootloadhid.html">HIDboot</a>)
+  will not occur because the <code>.hex</code> file above contains both bootloader and the real USB2LPT firmware.
+  <br><small>If there is no USB2LPT, then check:<ul>
+   <li>Solder joints on USB socket correctly?
+   </li><li>USB socket not melted? (Contact springs still visible?)
+   </li><li>SMD solder joints correctly without shorts?
+  </li></ul>
+  Check with another computer and/or with front-side or back-side USB connectors on PC, or using a USB hub.
+  If USB2LPT seems to work unreliable, populating the crystal and downgrading to USB2LPT 1.5 firmware may help.
+  The reason is an unstable 5V supply, that jitters the internal RC oscillator of the 1.6 firmware solution.
+  </small>
+ </li><li>Remove programming adapter
+ </li><li>Scratch jumper SJ2 (the only solder jumper on silk-screen-less lower PCB side)
+ <!-- li>Program firmware:
+ <ul>
+  <li>PonyProg: invoke <code><b>bootloadHID\commandline\bootloadHID
+   usb2lpt6.hex</b></code> (it's fairly fast; PonyProg is useless here)
+  <li>WinAVR: invoke <code><b>make flash</b></code>
+   (directory <code><b>src/firmware/USB2LPT6</b></code>)
+ </ul-->
+ </li><li>Connect <a href="https://heha.fwh.is/usb/lptchk/">LPT checker</a> or similar device,
+  run <code><b>Kurzschlusstest.exe</b></code>, make corrections if necessary
+ <br>Alternatively, download <a href="fw-utils.en/">fw-utils.en.zip</a> first for English message utilities (it's not supported by me).
+ </li><li>Close shell, make a final check
+</li></ul>
+
+</span></section><section class="collapsed" id="6"><h2>Known PCB bugs<a class="hl" href="#6" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+<ul>
+ <li>The crystal and the both 22&nbsp;pF capacitors are not to populate
+ </li><li>Population with ATmegaX8 is currently not recommended.<br>
+  If you want ATmega48 population, R<sub>1</sub> should be 4.7&nbsp;kΩ,
+  and the older firmware USB2LPT5 (and crystal) must be used.
+  A bootloader cannot be used (this chip has no bootloader support)
+ </li><li>If D<sub>2</sub> (BAV199) is used, R<sub>1</sub> must be 1.5&nbsp;kΩ
+ </li><li>The 5&nbsp;V USB interface with 220&nbsp;Ω series resistors is <b style="color:darkred">incompatible to some notebooks</b>.
+ In such a case, the device will not be recognized correctly, and you see „Unknown device“.
+ No driver installation will help here, and any force may damage your Windows installation.
+ <br><b style="color:darkgreen">Possible solutions:</b><ul>
+  <li>Use a USB hub in between, or an active extension cable (which is essentially a one-port hub).
+  </li><li>Change components to 3.3&nbsp;V design, i.e. populate the BAV199 as stated above.
+  Of course, this will result in 3.3&nbsp;V I/O voltages, and the inputs are then not truly 5.0&nbsp;V compliant.
+  </li><li>Populate flying 3.9&nbsp;V zener diodes to USB D+ and D- wires.
+ </li></ul>
+</li></ul>
+
+</span></section><section class="collapsed" id="7"><h2>Solder jumpers<a class="hl" href="#7" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+This revision 6 (USB2LPT 1.6) has 3&nbsp;pre-connected solder jumpers:
+<ul>
+ <li><b>SJ1</b> can assign power to pin 25&nbsp;of SubD receptacle:<ul>
+  <li>open: Pin 25 unbeschaltet
+  </li><li><u>right connected</u>: Pin 25&nbsp;to ground (default)
+  </li><li>left connected: Pin 25&nbsp;to 5 volts
+  </li></ul>
+  If power is needed, populating a self-resetting fuse is highly recommended.<p>
+ </p></li><li><b>SJ2</b>, <u>connected</u> at PCB fabrication,
+  scratched at device manufacturing: activates the RESET pin of ATmega
+  for programming the microcontroller.<p>
+ </p></li><li><b>SJ3</b>, <u>connected</u> by default, scratch when you want
+  3.3 volts operation of ATmega8 (e.g. for safer JTAG connection),
+  populate a BAV199 and change R<sub>1</sub>.
+  Moreover, scatch it to measure device's current consumption and re-solder.
+</li></ul>
+
+
+
+<div id="give-freely-root-bcjindcccaagfpapjjmafapmmgkkhgoa" class="give-freely-root" data-extension-id="bcjindcccaagfpapjjmafapmmgkkhgoa" data-extension-name="JSON Formatter" style="display: block;"><template shadowrootmode="open"></template></div></span></section><footer><nav title="Navigation"><a href="ul-17.en.htm">Next article (ul-17.en)</a><a href="https://heha.fwh.is/USB2LPT">Directory above (USB2LPT)</a></nav><hr><address><p id="date"><a href="https://heha.fwh.is/usb/USB2LPT/email?Converter%20From%20USB%20To%20Parallel%201.6">Henrik Haftmann</a>, created: <time datetime="2009-01-25">January 25. 2009</time> — last modified: <time datetime="2017-07-31">July 31. 2017</time><a class="suppress_before" href="https://de.wikipedia.org/wiki/Creative_Commons"><img src="./ul-16.en_files/CC_BY_icon.svg" align="right" title="gemeinfrei bei Namensnennung"></a>
+</p></address></footer></body></html>
