@@ -1,0 +1,1893 @@
+// Common style support for ~heha web pages
+// This script should run on any browser (to be checked)
+// The web pages using this script should also have these (optional) header content:
+
+// <meta charset="utf-8">
+//	Page must be UTF-8 encoded
+
+// <meta name=date content="1996-01-23">
+//	This is the _creation_ date, for the footer
+
+// <meta name=resp content="Name, Phone">
+//	This is the _responsible person_ for this topic (machine), for the footer
+
+// <link rel=frameset href="Index.htm">
+// 	When this page is normally a part of a frameset,
+//	let the user choose to jump to it or not (no annoying automatic redirection)
+
+// <link rel=alternate href="index.de.htm">
+//	Available language versions of this page;
+//	the top-left language selection bar will be populated
+
+// <link rel=next href="../Piezomess/">
+//	The next recommended page for linear navigation,
+//	the bottom-right navigation bar will be populated
+//	Firefox preloads that page.
+
+// <link rel=prev href="../hs/">
+// <link rel=up href="../software/">
+//	Other relations. If "up" is not given, "." is used for files and ".." for directories.
+
+// <link rel=stylesheet href="h.css">
+//	Formatting relies on that style sheet
+
+// Damit's mit IE11 läuft dürfen keine Pfeilfunktionen verwendet werden,
+// selbst dann nicht, wenn der Kode niemals unter IE11 ausgeführt wird:
+// Der Syntaxprüfer verweigert die Ausführung des JavaScripts.
+// Außerdem kein "let" und "const"
+
+"use strict";
+
+// 0. Für ältere Browser HTML5-Tags schaffen — sowie 5 eigene Tags
+(function(){
+ var tags=['header','hgroup','nav','article','figure','figcaption',
+	'section','aside','footer','sqrt','o','blink','resp','line','sevenseg'];
+ for (var i=0; i<tags.length; i++) document.createElement(tags[i]);
+ if (!document.head) document.head=document.getElementsByTagName("head")[0]; // Firefox 3.6
+})();
+
+// Show a link to content frame if not in a frameset
+// For use at top of document
+function info(link,text) {
+if (top == self)
+  document.writeln("<a href='"+link+"' target=_top>"+text+"</a>");
+}
+
+// Global variable for language detection
+var lang;
+
+// External link, show an icon, and open in a new window?
+function e_de(url,text) {
+ document.write("<IMG src='icons/extern.gif' align=top alt=''> <a href='"+url+"'>"+text+"</a>");
+}
+
+function E_de(url,tip,text) {
+ document.write("<IMG src='icons/extern.gif' align=top alt=''> <a href='"+url+"' title='"+tip+"'>"+text+"</a>");
+}
+
+function strDateFormat(y,m,d) {
+ y=parseInt(y,10);
+ m=parseInt(m,10);	// 1..12, nicht 0..11
+ d=parseInt(d,10);	// führende Nullen entfernen
+ var was=new Date(y,m-1,d);
+ var now=new Date();
+ var s,today=new Array;
+ switch (lang) {
+  case "en": {
+   var mo=["January","February","March","April","May","June","July","August","September","October","November","December"];
+   s=mo[m-1]+" "+d+". "+y;
+   today=new Array("today","yesterday");
+  }break;
+  case "jp": {
+   s=y+"年"+m+"月"+d+"日";
+   today=new Array("今日","昨日","一昨日");	// kyô, kinô, ototoi
+  }break;
+  case "cn": {
+   s=y+"年"+m+"月"+d+"日";
+   today=new Array("今天","昨天","前天");
+  }break;
+  case null:
+  case "de": {
+   var mo=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+   s=d+". "+mo[m-1]+" "+y;
+   today=new Array("heute","gestern","vorgestern");
+  }break;
+  default: s=was.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+ }
+ var age=Math.floor((now.getTime()-was.getTime())/(1000*60*60*24));	// Alter in Tagen
+ if (0<=age && age<today.length) s="<b>"+today[age]+"</b>";
+ var dt=y+"-"+('0'+m).substr(-2)+"-"+('0'+d).substr(-2);
+ return "<time datetime=\""+dt+"\">"+s+"</time>";
+}
+
+// generiert String: "erstellt: <Datum>"
+function erstellt(creat) {
+ var s=_tr("erstellt")+": ";
+ switch (typeof(creat)) {
+  case "string": s+=strDateFormat(creat.substr(0,4),creat.substr(5,2),creat.substr(8,2)); break;
+  case "number": s+=strDateFormat((Math.floor(creat/10000)+2000),Math.floor(creat/100)%100,creat%100); break;
+ }
+ return s;
+}
+
+// <creat> in der Form yymmdd (Zahl) oder "yyyy-mm-dd" (String)
+function address(creat) {
+ var s="<p id=date><a href='email?"+document.title+"'>Henrik Haftmann</a>, ";
+ s+=erstellt(creat)+" — ";
+ var time=document.lastModified;	// in der Form "mm/dd/yyyy HH:MM:SS"
+ s+=_tr("mdate")+": "+strDateFormat(time.substr(6,4),time.substr(0,2),time.substr(3,2));
+ return s;
+}
+
+function switchBild(el,url,width,className) {
+// el muss parentNode haben!
+ switch (el.nodeName) {
+  case "OBJECT":
+  if (!url.match(/svg$/i)) el=g_object_img(el,url);
+  else el.data=url;
+  break;
+  case "IFRAME":
+  if (!url.match(/svg$/i)) el=g_object_img(el,url);
+  else el.src=url;
+  break;
+  case "DIV":
+  if (!url.match(/(stl|wrl)$/i)) el=g_object_img(el,url);
+  else g_stlviews.get(el.parentNode).loadurl(url);
+  return;	// "width" nicht ändern
+  default:
+  el.src=url;
+  el.className=className;
+ }
+ if (width) el.width=width;
+ else el.removeAttribute("width");
+}
+
+var g_onimgerror;	// Funktionszeiger
+var g_object_img;	// Funktionszeiger
+var g_stlloads=new Array;	// Für verzögerte Aufrufe von stlload()
+var g_stlviews=new WeakMap();	// Um bei geladenen stlview()-Closures STLs zu wechseln
+// Umformen von <ul><li><a href=bildname.ext>text</a>...</ul>
+// in <div><img src=erstesbild.ext><fieldset><input...></fieldset></div>
+function MultiBild(figs) {
+ for (var BildNr=0;BildNr<figs.length;BildNr++) (function(fig,BildNr){	// Capture erstellen
+  var ul=fig.getElementsByTagName("ul");
+  if (ul && ul.length) try{
+   ul=ul[0];
+   var img=createEl("img");
+//   img.setAttribute("id","B"+BildNr);
+//   img.onerror=g_onimgerror;	// TODO: Nicht global
+   var div=createEl("div",{"class":"multi"},[img]);	// <figure> als Flexbox: Hier Problem mit <figcaption>
+   var pic1=null;
+   var fieldset=createEl("fieldset",{"class":"box",title:_tr("selbild")});
+//    s+="<fieldset class='box' title=\""++"\">\n";	// eine Box beginnt mit jenem <ul>
+   var subttl=ul.innerHTML;
+   var e=subttl.toLowerCase().indexOf("<li");	// Untertitel einfügen wenn etwas zwischen <ul> und <li>
+   subttl=subttl.substr(0,e);
+   if (subttl.search(/[!-z]/)>=0) {
+    var legend=createEl("legend");
+    legend.innerHTML=subttl;
+    fieldset.appendChild(legend);
+   }
+   var lis=ul.getElementsByTagName("LI");
+   for (var i=0; i<lis.length; i++) (function(li,i){
+    var a=li.getElementsByTagName("A")[0];	// MUSS ein <a>-Tag enthalten!
+    if (!a) return;
+    if (i) fieldset.appendChild(createEl("br"));
+    var id=getUniqueId();	// muss uniq sein damit die "for"-Bezüge der Labels funktionieren
+    var src=a.href;		// Dadurch dass "src" in einer umgebenden Funktion steckt ist der Inhalt bei onClick für jedes Bild einzeln verfügbar (= Closure)
+    var width=a.getAttribute("width");	// dasselbe für „width“
+    var className=a.className;
+    var input=createEl("input",{type:"radio",name:"B"+BildNr,id:id});
+    input.onclick=function(e) {switchBild(div.firstChild,src,width,className);}
+    if (!pic1 && src) {
+     input.checked="checked";
+     img.setAttribute("src",pic1=src);
+     if (width) img.setAttribute("width",width);
+// Achtung! Durch Setzen von src kann img via img.onerror verwaisen, wir holen uns das neue img vom div und überlassen das alte der Müllabfuhr
+     img=div.firstChild;
+     if (a.className) img.className=a.className;
+    }
+    fieldset.appendChild(input);
+    var title=a.innerHTML;	// auch mit HTML-Formatierungen
+    if (!title) {
+     var a=src.lastIndexOf("/")+1;	// Bild-Dateiname
+     var e=src.lastIndexOf(".");	// … ohne Endung
+     title=unescape(src.substring(a,e));
+    }
+    var label=createEl("label",{"for":id});
+    label.innerHTML=title;
+    fieldset.appendChild(label);
+    var rest=li.innerHTML;
+    var e=rest.toLowerCase().indexOf("</a>");
+    rest=rest.substr(e+4);
+    if (rest) fieldset.appendChild(createEl("small")).innerHTML = rest;
+   })(lis[i],i);
+
+//   var divr=document.createElement("div");
+//   divr.className="bggray02";
+//   divr.style="display:inline-block";	// für den Fall dass display:flex im alten Browser nicht zur Verfügung steht, gleiches Verhalten simulieren
+
+   div.appendChild(fieldset);
+
+   fig.replaceChild(div,ul);
+   
+/* alter Mist
+   var table=document.createElement("table");
+   p.replaceChild(table,uls[0]);
+   table.cellspacing=0;
+   table.cellpadding=4;
+   table.align="center";
+   <tr><td>td
+
+   var t="<img src='"+pic1+"' id=B"+BildNr;
+   if (class1) t+=" class='"+class1+"'";
+   t+=" onerror='g_onimgerror(this)'";
+   t+="><div class=bggray02 style=display:inline-block>"+s;
+//   table.innerHTML=t;
+   p.innerHTML=t
+*/
+//   for (var h=1; h<uls.length; h++) p.removeChild(uls[h]);
+  }catch(e){		// keine Image-Liste: Nichts tun!
+   console.log("MultiBild versagt");
+  }
+ })(figs[BildNr],BildNr);
+}
+
+function appendUrlLastElem(s,url) {
+ if (url) {
+  if (url.lastIndexOf('/') == url.length-1) url=url.substr(0,url.length-1);
+  url=url.substr(url.lastIndexOf('/')+1);
+  if (url) s+=" ("+decodeURI(url)+")";	// keine Namensausgabe fürs Wurzelverzeichnis
+ }
+ return s;
+}
+
+String.prototype.format=function() {
+ var a = this;
+ if (a) for (var k in arguments) a = a.replace("{" + k + "}", arguments[k]);
+ return a;
+}
+
+var strings={
+ en:{
+  next:"Next article",
+  nextpic:"Next picture",
+  prev:"Previous article",
+  prevpic:"Previous picture",
+  up:"Directory above",
+  lineno:"Show line numbers",
+  lnwrap:"Wrap lines",
+  Inhalt:"Content",
+  close:"Close content overlay",
+  frameset:"This page is part of a frameset.",
+  selflink:"link for reference: use “copy address” to reference in email etc.",
+  erstellt:"created",
+  mdate:"last modified",
+  dirfirst:"Directories on top",
+  sort:"Sort table rows",
+  sortx:"Sort table columns",
+  unnamed:"unnamed",
+  resp:"Made for",
+  so:"see above",
+  su:"see below",
+  notarget:"Invalid local target #{0}!",
+  nosvg:"Your browser doesn't support SVG",
+  Section:"Section ",
+  grayout:"Non-target grayed out",
+  selbild:"Select figure",
+  tracked:"Caution! The webpage linked uses cookies to spy you out — web hoster earns money for your data."
+ },
+ de:{
+  next:"Nächster Artikel",
+  nextpic:"Nächstes Bild",
+  prev:"Vorhergehener Artikel",
+  prevpic:"Vorhergehendes Bild",
+  up:"Übergeordnetes Verzeichnis",
+  lineno:"Zeilennummern",
+  lnwrap:"Umbruch",
+  close:"Inhaltsverzeichnis schließen",
+  frameset:"Diese Seite ist Teil eines Framesets.",
+  selflink:"Referenz-Link: Benutze „Link-Adresse kopieren“ für Bezugnahme in E-Mail u.ä.",
+  mdate:"letzte Änderung",
+  dirfirst:"Verzeichnisse zuerst",
+  sort:"Tabellenzeilen sortieren",
+  sortx:"Tabellenspalten sortieren",
+  unnamed:"ohne Name",
+  resp:"Bearbeitet für",
+  so:"siehe oben",
+  su:"siehe unten",
+  notarget:"Fehlendes Ziel für lokalen Verweis #{0}!",
+  nosvg:"Ihr Browser kann leider kein SVG darstellen.",
+  Section:"Abschnitt ",
+  grayout:"Abgedunkelt weil kein Sprungziel",
+  selbild:"Bild wählen",
+  tracked:"Achtung! Die verlinkte Webseite streut Cookies um Dich auszuspionieren — für ein paar Kröten für den Seitenbetreiber."
+ },
+ jp:{
+  Inhalt:"コンテンツ",
+  erstellt:"作成日",
+  mdate:"最終更新日",
+  unnamed:"名前のない",
+  Section:"セクション"
+ },
+ cn:{
+  Inhalt:"内容",
+  erstellt:"创建日期",
+  mdate:"上次修改日期",
+  unnamed:"没有名字",
+  Section:"部分"
+ }
+};
+
+function _tr(id) {
+ var l=lang&&strings[lang]?lang:"de";
+ var s=strings[l][id];		// Lokalisierte Version
+ if (!s) s=strings.de[id];	// Deutsche Version
+ if (!s) s=id;			// Irgendwas
+ return s;
+}
+
+function strLinkText(rel,url) {
+ if (!url) return;
+ if (url.match(/\.(jpg|gif|png|bmp|svg)$/i)) rel+="pic";
+ return appendUrlLastElem(_tr(rel),url);
+}
+
+/*****************
+ * Popup-Fenster *
+ *****************/
+var clean_uri = location.protocol + "//" + location.host + location.pathname + location.hash;
+// oh dieser Tipp ist fies: Man sieht so den angehängten Query-String nicht aber er scheint immer noch wirksam, oder nur für serverseitige Skripte?
+// Zunächst nur Query-Strings entfernen
+//Problem mit stlview!! window.history.replaceState({}, document.title, clean_uri);
+// Lesezeichen anspringen mit #2 geht so nicht mehr! Offenbar springt der Browser <i>nach</i> dem Laden der Webseite
+clean_uri = location.protocol + "//" + location.host + location.pathname;
+// Deshalb passiert die Lesezeichen-Löschaktion erst nach 30 s mit der Entfernung der Abschattung
+ 
+var pop = null;
+var mouse = "mouse";	// "pointer" ab Firefox59, IE11, Chrome55
+
+function popdown() {
+  if (pop && !pop.closed) pop.close();
+}
+
+function popup(obj,w,h) {
+  var url = obj.href;
+  if (!url) return true;
+  w = (w) ? w += 20 : 150;  // 150px*150px is the default size
+  h = (h) ? h += 25 : 150;
+  var args = 'width='+w+',height='+h+',sizeable';
+  popdown();
+  pop = window.open(url,'',args);
+  return (pop) ? false : true;
+}
+
+if (window.addEventListener) {
+ window.addEventListener("focus",popdown,false);
+ window.addEventListener("unload",popdown,false);
+}else{
+ window.attachEvent("onfocus",popdown);
+ window.attachEvent("onunload",popdown);
+}
+
+// Muss wiederholt aufgerufen werden, wenn sich entsprechende Listen ändern
+// Lupenfunktion für Bilder (wie die üblichen Webshops)
+function Lupe() {
+ var imgs=document.querySelectorAll("img.tn");	// alle Bilder der Klasse "tn" (per CSS 48×48 Pixel klein)
+ if (imgs.length) {		// sowie alle Bilder, die mittels "width" klein dargestellt werden
+  var z=createEl("img",{"class":"tnh"});
+  document.body.appendChild(z);
+  for (var i=0; i<imgs.length; i++) {
+   imgs[i].onmouseover=function(e) {
+    function followMouse(e) {
+     z.style.left=(e.clientX+10)+"px";
+     z.style.top=(e.clientY+10)+"px";
+    }
+    z.src=this.src;			// gleiches Bild setzen
+    z.style.display="block";
+    followMouse(e);
+    e.target.onmousemove=followMouse;	// nicht als Übergangs-Start
+    e.target.onmouseout=function(e) {z.style.display="none";}
+//      z.style.opacity=0;
+//      window.setTimeout(function(e) {
+
+//      },300);
+//    },0);
+   }
+  }
+ }
+ document.querySelectorAll("img[width]")	// alle Bilder, die mittels "width" klein dargestellt werden
+ .forEach(function(img) {
+  img.style.cursor="zoom-in";	// "-webkit-zoom-in", "-moz-zoom-in", "url('/bilder/lupe.cur'), pointer"
+  img.onclick=function(e) {
+   location.href=e.target.src;
+  };
+// TODO: Panning bei mousemove innerhalb des Fensters (macht mehr Arbeit)
+ });
+}
+
+/****************************************************************
+ * Liefert für IE6 + IE7 querySelectorAll() nach (= „Polyfill“) *
+ ****************************************************************/
+if (!document.querySelectorAll) {
+ document.querySelectorAll=function(selectors) {
+  var style=document.createElement('style');
+  document.documentElement.firstChild.appendChild(style);
+  document._qsa = [];
+  style.styleSheet.cssText=selectors+'{x-qsa:expression(document._qsa && document._qsa.push(this))}';
+  window.scrollBy(0,0);
+  style.parentNode.removeChild(style);
+  var els=[];
+  while (document._qsa.length) {
+   var el=document._qsa.shift();
+   el.style.removeAttribute('x-qsa');
+   els.push(el);
+  }
+  document._qsa=null;
+  return els;
+ }
+}
+if (!document.querySelector) {
+ document.querySelector=function(selectors) {
+  var els = document.querySelectorAll(selectors);
+  return (els.length) ? els[0] : null;
+ }
+}
+if (!Array.prototype.forEach) {
+ Array.prototype.forEach=function(callback,that) {
+  var len=this.length>>>0;
+  for (var i=0; i<len; i++) if (i in this) callback.call(that,this[i],i,this);
+ };
+}
+if (!Array.prototype.map) {
+ Array.prototype.map=function(callback,that) {
+  var len=this.length>>>0, A=new Array(len);
+  for (var i=0; i<len; i++) if (i in this) A[i]=callback.call(that,this[i],i,this);
+  return A;
+ };
+}
+if (!Array.prototype.filter) {
+ Array.prototype.filter=function(callback,that) {
+  var len=this.length>>>0, A=new Array(len), k=0;
+  for (var i=0; i<len; i++) if (i in this && callback.call(that,this[i],i,this)) A[k++]=this[i];
+  A.length=k;
+  return A;
+ };
+}
+if (!Array.prototype.every) {
+ Array.prototype.every=function(callback,that) {
+  var len=this.length>>>0;
+  for (var i=0; i<len; i++) if (i in this && !callback.call(that,this[i],i,this)) return false;
+  return true;
+ };
+}
+if (!Array.prototype.findIndex) {
+ Array.prototype.findIndex=function(callback,that) {
+  var len=this.length>>>0;
+  for (var i=0; i<len; i++) if (i in this && callback.call(that,this[i],i,this)) return i;
+  return -1;
+ };
+}
+if (!Array.prototype.find) {
+ Array.prototype.find=function(callback,that) {
+  var i=this.findIndex(callback,that);
+  if (i>=0) return this[i];
+ };
+}
+if (!Array.prototype.keys) {
+ Array.prototype.keys=function() {
+  var len=this.length>>>0, A=new Array(len);
+  for (var i=0; i<len; i++) A[i]=i;
+  return A;
+ };
+}
+if (!Array.prototype.indexOf) {
+ Array.prototype.indexOf=function(el,i) {
+  var len=this.length>>>0;
+  for (i=i|0; i<len; i++) if (i in this && this[i]===el) return i;
+  return -1;
+ };
+}
+if (window.NodeList && !NodeList.prototype.forEach)
+  NodeList.prototype.forEach=Array.prototype.forEach;
+if (window.HTMLCollection && !HTMLCollection.prototype.forEach)
+  HTMLCollection.prototype.forEach=Array.prototype.forEach;
+
+// HTML-Elementebaum „in einem Rutsch“ generieren, meist nur ein Element
+function createEl(tag,attr,sub) {
+ if (!sub) sub=[];
+ if (!attr) attr={};
+ var el=document.createElement(tag);
+ for (var i in attr) {
+  if (typeof attr[i]=="object") Object.assign(el[i],attr[i])	// für "style"
+  else el.setAttribute(i,attr[i]);
+ }
+ for (var i=0; i<sub.length; i++) el.appendChild(sub[i]);
+ return el;
+}
+// Dokumentweit eindeutige ID beschaffen, wird benötigt um <input> und <label> automatisiert zu verknüpfen
+var uniqueId = 0;
+function getUniqueId() {
+ var s;
+ do s = "UID"+(++uniqueId);
+ while (document.getElementById(s));
+ return s;
+}
+// Zuordnung Hotkey => Input-ID
+var uniqueHotkeys = {};
+// Hier: Zeichen die auf einer deutschen Tastatur erreichbar sind
+var keysAvailable = /[0-9a-zäöüß,.+#-]/;
+// Dokumentweit eindeutigen Hotkey finden
+function getUniqueHotkey(s,id) {
+ for (var i=0; i<s.length; i++) {
+  var c = s.substr(i,1).toLowerCase();
+  if (!keysAvailable.test(c)) continue;
+  if (c in uniqueHotkeys) continue;
+  uniqueHotkeys[c]=id;
+  return [c,i];
+ }
+ return null;
+}
+// Ersten Textknoten mit lesbarem Text finden
+// Geht auch mit XPath aber ich weiß nicht wie
+function findTrueTextNode(n) {
+ if (n.nodeName=="#text" && keysAvailable.test(n.nodeValue.toLowerCase())) return n;
+ var ch = n.childNodes;
+ for (var i=0; i<ch.length; i++) {
+  var cn = findTrueTextNode(ch[i]);
+  if (cn) return cn;
+ }
+ return null;
+}
+// String des Textknotens an Position i unterstreichen
+function splitTextNode(tn,i) {
+ var s = tn.nodeValue, s1 = s.substr(0,i), s2 = s.substr(i,1), s3 = s.substr(i+1);
+ if (!s2) return;
+ var par = tn.parentNode;
+ if (s1) par.insertBefore(document.createTextNode(s1),tn);
+ par.insertBefore(createEl("u",{"class":"gui"},[document.createTextNode(s2)]),tn);
+ if (s3) par.insertBefore(document.createTextNode(s3),tn);
+ par.removeChild(tn);
+}
+// Verbindet <input> mit benachbartem <label> mit eindeutigen IDs
+// und weist AccessKeys zu
+function joinLabelToInput() {
+ var inputs = document.querySelectorAll("input");
+ for (var i=0; i<inputs.length; i++) {
+  var input = inputs[i];
+  var label = input.nextElementSibling;
+  if (!label || label.nodeName!="LABEL") label = input.previousElementSibling;
+  if (!label || label.nodeName!="LABEL") return;
+  var id = input.getAttribute("id");
+  if (!id) {
+   id = getUniqueId();
+   input.setAttribute("id",id);
+  }
+  label.setAttribute("for",id);
+  var tn = findTrueTextNode(label);
+  if (tn) {
+   var s = tn.nodeValue;
+   var k = getUniqueHotkey(s,id);
+   if (k) {
+    input.setAttribute("accessKey",k[0]);
+    splitTextNode(tn,k[1]);
+   }
+  }
+ }
+}
+// Wurzelverzeichnis für das jeweilige Webangebot beschaffen
+function getRoot() {
+ let prefix=window.location.pathname.split('/')[1];	// Pfad zu root zusammenfrickeln
+ if (prefix.substr(0,1)=='~') return '/'+prefix;	// "~heha" oder "~haftmann", je nach höherer Lehranstalt
+ return "";
+}
+
+/********************************************************
+ * Riesige Funktion, Aufruf nach dem Laden der Webseite *
+ ********************************************************/
+function onLoad() {
+ var b=document.body;
+ if ("onpointerdown" in b) mouse = "pointer";
+
+// Lokale Funktionen
+
+// Automatische Sections mit Header-IDs
+// Generiert Eigen-Links (mit Schlusspunkt - zur Unterscheidung von Zeilennummern)
+// Generiert Inhaltsverzeichnis an Node <content>
+// Packt alles hinter der Überschrift in ein <span> zum Wegklicken
+// REKURSIVE FUNKTION!
+// TODO: Sollte <article> statt <section> erstellen, wenn es <meta>-Einträge gibt
+// Routine hat Probleme bei nicht abgeschlossenen <i> (= kein sauberes HTML)
+ function addSections(n,content,level) {
+// Zur Detektion von Section-Footern (= alles nach dem letzten <hr>) [TODO: Section-weise]
+// Testet ob <node> = <HR> ist UND ob danach kein H<level>..H5 und auch kein HR folgt.
+  function isLastHr(node) {
+   if (node.nodeName!="HR") return false;
+   if (node.width) return false;				// gestalterisch
+   for (var n=node.nextSibling;n;n=n.nextSibling) {
+    if (n.nodeName.match("H[1-"+level+"]")) return true;	// nächste Überschrift darüber
+    if (n.nodeName.match("H["+level+"-5R]")) return false;	// nächste Überschrift darunter
+   }
+   return true;
+  }
+  function isNextAside(node) {
+   if (node.nodeName!="ASIDE") return false;
+   for (var n=node.nextSibling;n;n=n.nextSibling) {
+    if (n.nodeType!=1) continue;
+    if (n && n.nodeName.match("H[1-"+level+"]")) return true;
+    return false;
+   }
+  }
+  var hs=n.getElementsByTagName("h"+level);	// all "h" nodes of level 2..5 (1 and 6 are reserved here)
+  if (hs.length) {
+   var ol=createEl("ol");
+   content.appendChild(ol);
+   for (var i=0;i<hs.length;i++) {
+    if (hs.length>100) {
+     console.log("Zu viele Iterationen!");
+     debugger;
+     break;
+    }
+    var h=hs[i];
+    var li=createEl("li");
+    ol.appendChild(li);
+    var a=createEl("a");
+    li.appendChild(a);
+    var t=h.textContent;
+    if (!t) t=h.innerText;
+    t=t.replace(/\([^)]+\)/g,"");	// Text in Klammern entfernen
+    a.appendChild(document.createTextNode(t));
+    var alreadySection=h.parentNode.nodeName=="SECTION";
+    var s=alreadySection ? h.parentNode : createEl("section");
+    s.className="collapsed";
+    if (h.id) {
+     s.id=h.id;
+     h.removeAttribute("id");		// Header-ID umsetzen zur Section-ID
+    }else s.id=(level>2?n.parentNode.id+".":"")+(i+1);
+    a.href="#"+s.id;
+	// Hinter die Überschrift einen Anker zur eigenen umgebenden <section> setzen
+    var a=createEl("a",{"class":"hl",href:"#"+s.id,title:_tr("selflink")},[document.createTextNode("⚓")]);
+    // Link auf Anker generieren
+    h.appendChild(a);	// wird tatsächlich hinter den Überschriftentext gesetzt
+    var node=h.nextSibling;	// nachfolgendes Element merken
+    var prev=h;
+    do prev=prev.previousSibling;		// Suchen eines direkt vorlaufenden echten Tags
+    while(prev && prev.nodeName.charAt(0)=="#");	// Text, Kommentar u.ä.
+    if (!alreadySection) {
+     if (prev && (prev.nodeName=="ASIDE" || prev.nodeName=="IMG")) {
+      s.appendChild(prev);	// umhängen eines vorlaufenden <aside> in die <section>
+     }
+     h.parentNode.insertBefore(s,h);	// <section> vor <h> einfügen
+     s.appendChild(h);		// einhängen
+    }
+    var div=document.createElement("span");
+    h.onclick=function(e){
+     var n=e.target.parentNode;	// umschaltbar wie in Wikipedia; sichtbar nur auf Mobilgerät
+     if (n.classList && n.classList.toggle) n.classList.toggle("collapsed");
+    };
+    var nested=false;
+    var metas=new Array;
+    var count=0;
+//    if (alreadySection) debugger;
+    while (node && (alreadySection || !isLastHr(node) && !isNextAside(node))) {
+     if (node==hs[i+1]) break;	// nächste gleichrangige Überschrift; [i+1] sollte immer gehen
+     if (node.nodeName=="SECTION" && !nested) break;	// Folgebereich hat <section></section>
+     if (node.nodeName=="H"+(level+1)) nested=true;
+     var next=node.nextSibling;
+     if (next==metas[0]) next=null;
+     if (node.nodeName=="META" && !nested) metas[metas.length]=s.appendChild(node);
+     else div.appendChild(node);	// alles hinter <h> wird "umgehängt"
+     if (metas.length>9) {
+      console.log("Zu viele Metas!");
+      debugger;
+      break;
+     }
+     if (++count>300) {
+      console.log("Zu viele Iterationen!");
+      debugger;
+      break;
+     }
+     node=next;			//  (Ausnahme: Letztes <HR>)
+    }
+    s.appendChild(div);
+    if (metas.length) {
+     var f=document.createElement("footer");
+     for (var k=0; k<metas.length; k++) {
+      var meta=metas[k];
+      var p=document.createElement("p");
+      var html="";
+      switch (meta.getAttribute("name")) {
+       case "resp": p.className="invis-resp"; html=_tr("resp")+": "+meta.content; break;
+       case "date": html=_tr("Section")+erstellt(meta.content); break;
+      }
+      p.innerHTML=html;
+      f.appendChild(p);
+     }
+     s.appendChild(f);
+    }
+    if (level<5) addSections(div,li,level+1);
+   }
+  }
+ }
+
+ function getTarget(id) {
+  var target=document.getElementById(id)
+	||   document.querySelector("a[name='"+id+"']");
+  if (!target) alert(_tr("notarget").format(id));
+  return target;
+ }
+
+ function animateTarget(id) {
+  var target=getTarget(id);
+  if (target && target.animate) {
+   target.animate({background:['yellow','initial']},1000);
+  }
+ }
+ function grayoutNonTarget(id) {
+  var target=getTarget(id);
+  if (target) {
+   function doWithNeighbors(el,fu) {
+    var pa=el.parentNode;
+    var cn=pa.childNodes;
+    for (var i=0; i<cn.length; i++)
+    if (cn[i]!=el) fu(cn[i]);
+    if (pa!=b) doWithNeighbors(pa,fu);
+   }
+   var undo=[];
+   function addshadow(el) {
+    if (el.nodeType==1) {
+     undo.push({el:el,tag:"class",val:el.className});
+     if (el!=b) {
+      undo.push({el:el,tag:"title",val:el.title});
+      el.title=_tr("grayout");
+     }
+     el.classList.add("shadowed");
+    }
+   }
+   function undoshadow(e) {
+    for (var i=0; i<undo.length; i++) {
+     var u=undo[i];
+     if (u.val) u.el.setAttribute(u.tag,u.val);
+     else u.el.removeAttribute(u.tag);
+    }
+// Auch das Lesezeichen in der URL-Zeile wegnehmen
+    window.history.replaceState({}, document.title, clean_uri);
+   }
+   addshadow(b);
+   undo.push({el:target,tag:"class",val:target.className});
+   target.classList.add("hilited");
+   doWithNeighbors(target,addshadow);
+   b.addEventListener("click",undoshadow);
+   setTimeout(undoshadow,30000);
+  }
+ }
+
+ var collectedIDs=[];
+// REKURSIVE FUNKTION!
+ function BezugRichtung(node) {
+  var href=clean_uri;
+  if (node.id) collectedIDs[collectedIDs.length]=node.id;	// IDs sammeln
+  if (node.nodeName=="A"
+  && !node.className
+  && node.href
+  && node.href.substr(0,href.length+1)==href+"#") {
+   var id=node.href.substr(href.length+1);
+   var found=false;
+   for (var i=0; i<collectedIDs.length; i++) {
+    if (id==collectedIDs[i]) {found=true; break;}
+   }
+   node.className=found?"lb":"lf";	// "local link forward" oder "local link back"
+   if (!node.title) node.title=_tr(found?"so":"su");
+   var target=getTarget(id);
+   if (target) {
+    var previous=target.style.background;	// Problem: Für jedes Target extra, könnte sich hier überlappen
+    node.onmouseenter=function(){target.style.background="yellow";};
+    node.onmouseleave=function(){target.style.background=previous;};
+   }
+  }
+  var nodes=node.childNodes;
+  if (nodes && nodes.length) for (var i=0; i<nodes.length; i++) BezugRichtung(nodes[i]);
+ }
+
+// Alle Zahlen mit Einheit (1 Leerzeichen dazwischen) suchen
+// und das Leerzeichen durch &nbsp; ersetzen, später mal durch ein dünnes Leerzeichen
+// REKURSIVE FUNKTION!
+ function ErsZahlEinheit(node) {
+  var nodes=node.childNodes;
+  if (nodes && nodes.length) for (var i=0; i<nodes.length; i++) ErsZahlEinheit(nodes[i]);
+  else{
+   var s=node.textContent;	// besser
+   if (!s) s=node.innerText;	// beachtet versteckten Text nicht
+   if (s) {
+    var sn=s.replace(/(\b[0-9]+?) ([pnµm°kMGT]?[A-z%€ΩÅ][A-z]?\b)/g,"$1 $2");
+    if (sn!=s) if (node.textContent) node.textContent=sn; else node.innerText=sn;
+   }
+  }
+ }
+ function Invis() {	// <span class=invis> unsichtbar machen
+  var ns=document.querySelectorAll(".invis");	// <span>,<div> der Klasse "invis"
+  for (var i=0; i<ns.length; i++) {
+   var n=ns[i];
+   var z=createEl("img",{title:"Hier klicken für Zusatzinformation"});
+   (z.onclick=function(e){
+    this.src="icons/"+(this.src.indexOf("plus")>=0?"minus":"plus")+".gif";
+   }).call(z);
+   n.parentNode.insertBefore(z,n);
+   if (n.nodeName=="DIV") {
+    n.parentNode.insertBefore(createEl("b",{},[document.createTextNode("Veraltet: ")]),z);
+   }
+  }
+ }
+
+ function startslidein(div,onBottom) {
+  if (div.className=="slidein") return;	// während Animation ignorieren
+  if (onBottom) {		// starten wenn Fenster heruntergescrollt oder ohne Scrollbars
+   if (window.scrollY+window.innerHeight<b.offsetHeight) return;
+  }
+  b.style.overflowX="hidden";
+  div.onanimationend=function() {b.style.overflowX="auto";}
+  div.className="slidein";	// Zuweisung = Animation starten
+ }
+
+ function showContent(e) {
+  var nav=document.getElementById("Nav");
+  nav.style.visibility="visible"
+  startslidein(nav);
+  nav=document.getElementById("NavBar");
+  nav.style.visibility="hidden"
+ }
+
+ function hideContent(e) {
+  var nav=document.getElementById("Nav");
+  nav.className="";		// falls Animation noch nicht abgeschlossen
+  nav.style.visibility="hidden"
+  nav=document.getElementById("NavBar");
+  nav.style.visibility="visible"
+ }
+// href mit document.referrer vergleichen und ggf. durch history.back ersetzen
+// Das hat IMHO den Vorteil der erleichterten Navigation
+ function back_replace(href) {
+  var link=createEl("a",{href:clean_uri+"/../"+href});
+	// das <a>-Element normalisiert den Pfad
+  if (link.href==document.referrer) href="javascript:history.back()";
+//  else alert(link.href+"\n"+document.referrer);
+  return href;
+ }
+ var vorher_mobil=undefined;
+ function onSizeChange() {
+  var mobil=window.matchMedia && window.matchMedia('(max-width: 599px)').matches;
+  if (vorher_mobil!==mobil) {	// Nur beim Umschalten beharken
+   vorher_mobil=mobil;
+// Umsortier-Aktionen!
+   var n=document.querySelectorAll(mobil?"aside+h2,aside+h3,aside+h4,aside+h5":"h2+aside,h3+aside,h4+aside,h5+aside");
+   for (var i=0; i<n.length; i++) {
+    n[i].parentNode.insertBefore(n[i],n[i].previousSibling);
+   }
+  }
+  setupLongTables();
+ }
+// Von rechts lesbarer Tabellenkopf
+ function setupLongTables() {
+// Precalculate heights after page load (and after each page resize),
+// not for each scroll event again
+  function setupLongTable(tbl) {
+   var thead=tbl.querySelector("thead");
+   var tfoot=tbl.querySelector("tfoot");
+   var tcapt=tbl.querySelector("caption");
+// Now we have all constant data to capture into the scroll event handler
+   function onScroll() {
+    var size=tbl.getBoundingClientRect();
+    var top=size.top+window.pageYOffset;
+    var bottom=size.bottom+window.pageYOffset;
+    var hhead=thead?thead.getBoundingClientRect().height:0;
+    var hfoot=tfoot?tfoot.getBoundingClientRect().height:0;
+    var hcapt=tcapt?tcapt.getBoundingClientRect().height:0;
+    if (tcapt) {
+     if (getComputedStyle(tcapt).captionSide.indexOf("bottom")>=0) bottom-=hcapt;
+     else top+=hcapt;
+    }
+    var tfrst=tbl.querySelector("tbody>tr:first-child");
+    var hfrst=tfrst?tfrst.getBoundingClientRect().height:0;
+    var tlast=tbl.querySelector("tbody>tr:last-child");
+    var hlast=tlast?tlast.getBoundingClientRect().height:0;
+    var dY=window.pageYOffset;
+    if (thead) {
+     if (dY>top && dY<bottom) {
+// Das hier generiert einen angenehmen Scroll-Out-Effekt beim Verlassen der Tabelle nach unten
+      var ey=bottom-hfoot-hhead-hlast;	// Letzte sinnvolle Platzierung
+      if (dY>ey) dY=ey;
+// Firefox scheint 1px Korrektur zu benötigen (für Randbreite?)
+      thead.style.transform="translate(0,"+(dY-top-1)+"px)";
+     }else{
+      thead.style.removeProperty("transform");	// keine Verschiebung
+      if (!thead.style.length) thead.removeAttribute("style");
+     }
+    }
+    if (tfoot) {
+     var h=window.innerHeight;
+     if (dY+h<bottom && dY<bottom) {
+      dY+=h-bottom;
+      var ay=top+hhead+hfrst+hfoot-bottom;	// negativ
+      if (dY<ay) dY=ay;				// Scroll-Out-Effekt
+      tfoot.style.transform="translate(0,"+(dY+1)+"px)";
+     }else{
+      tfoot.style.removeProperty("transform");	// keine Verschiebung
+      if (!tfoot.style.length) tfoot.removeAttribute("style");
+     }
+    }
+   };
+   window.removeEventListener("scroll",onScroll);
+   onScroll();	// vorher schon umplatzieren
+   window.addEventListener("scroll",onScroll);	// Dann bei jedem Scrollen
+  }
+  var tbls=document.querySelectorAll("table.long");
+  for (var k=0; k<tbls.length; k++) setupLongTable(tbls[k]);
+ }
+// Für Firefox würde es genügen, die Tabellenköpfe so zu belassen.
+// Alle anderen Browser erfordern das Einkapseln des Inhalts von <th> und <td> in <span>.
+// Also tun wir das hier für alle Browser.
+ function makeCcwHeader() {
+  var theads=document.querySelectorAll("thead.ccw");
+  for (var k=0; k<theads.length; k++) {
+   var ths=theads[k].querySelectorAll("th,td");
+   for (var i=0; i<ths.length; i++) {
+    var div=createEl("span");
+    while (ths[i].firstChild) div.appendChild(ths[i].firstChild);
+    ths[i].appendChild(div);
+   }
+  }
+ }
+// function ungefähr(a,b,c) {if (!c) c==1; return a-c<=b && b<=+a+ +c;}
+ function makeSizeable(divs) {
+  function createEcken(div) {	// Kapsel für "div" = Element das die Größe ändert
+// Normalerweise würde man für moderne Browser nur "pointerdown" statt "mousedown" verwenden.
+// Aber dann tauchen (auf dem Desktop) rätselhafte Propagation-Bugs auf!
+// Daher hat es sich als vorteilhaft erwiesen, "pointerdown" nur dann einzusetzen, wenn es keine Maus gibt.
+// Das ist mit Media-Queries möglich; beim Testen der Webseite und Umschalten auf Mobil-Emulation
+// muss man allerdings die Webseite neu laden (^R).
+// Die Edge-„Geräte“emulation versagt beim Resize von stlview-Canvas, bei Firefox klappt's.
+// Ein echtes Smartfon steht gerade (220227) nicht zur Verfügung
+//   var mouse=window.matchMedia && window.matchMedia("(any-hover: none)").matches ? "pointer" : "mouse";
+   if (div.querySelector("div.resizer")) return;	// hat schon Resizer als Kind: Nichts (mehr) tun!
+   if (div.nodeName!="DIV"
+    && div.nodeName!="ASIDE") {	// <canvas>, <iframe> darf keine Kindelemente enthalten
+    var cs=window.getComputedStyle(div);	// width/height/box-sizing übernehmen
+    var st={};
+    if (cs.width) {st.width=cs.width;}
+    if (cs.height) {st.height=cs.height;}
+    if (cs["box-sizing"]) {st["box-sizing"]=cs["box-sizing"]; /*div.style["box-sizing"]="border-box";*/}
+    var d2=createEl("div",{"class":"sizeable","style":st});
+    div.parentNode.insertBefore(d2,div);	// einhängen
+    d2.appendChild(div);	// umhängen
+    div.classList.remove("sizeable");
+    div=d2;			// mit dem neuen "div" weitermachen
+   }
+   var sizeX,sizeY,mouseX,mouseY;	// Werte für Containergröße und Mausposition bei "mousedown"
+   function createEcke(j) {		// Kapsel für "j" = Nummer der Ecke
+    function onMouseDown(e) {
+     e.preventDefault();		// stlview: Objekt reht (bei Touch) trotzdem mit!
+     e.stopImmediatePropagation();	// stlview: Sonst Start/Stop Animation
+     // Im Moment von MouseDown die DIV-Größe und die Mausposition einfangen (= echtes Capture)
+     var sty=getComputedStyle(div);
+     sizeX=parseFloat(sty.getPropertyValue("width"));
+     sizeY=parseFloat(sty.getPropertyValue("height"));
+     mouseX=e.pageX;
+     mouseY=e.pageY;
+     // Die Kindfenster müssen sich selbst per "resize"-Event um ihre Größenveränderung kümmern!
+     function onMove(e) {
+      e.preventDefault();		// stlview: Objekt reht (bei Touch) trotzdem mit!
+      e.stopImmediatePropagation();	// stlview: Sonst dreht das 3D-Objekt mit
+      if (!(e.buttons&1)) onMouseUp(e);	// wenn 'was schief geht
+      var mulX=[-1, 0,+1, 0,-1,+1,-1,+1][j],
+          mulY=[ 0,-1, 0,+1,-1,-1,+1,+1][j];
+      var w = sizeX, dx = e.pageX - mouseX,
+          h = sizeY, dy = e.pageY - mouseY;
+      w+=dx*mulX;
+      h+=dy*mulY;
+      if (mulX) div.style.width = w+"px";	// bei rein vertikaler Größenänderung Prozentangabe beibehalten
+      if (mulY) div.style.height = h+"px";	// bei rein horizontaler Größenänderung Prozentangabe beibehalten
+// Obwohl es logisch wäre, dem <div> ein Resize zu schicken,
+// kann sich in HTML vieles rundherum ändern, und alle die das interessiert
+// hängen sich besser bei window.addEventListener("resize") ein.
+// Responsive sizeable Canvase sollten dann selbst nachgucken,
+// ob sie sich wirklich ändern, um unnötiges Neuzeichnen zu vermeiden.
+      window.dispatchEvent(new UIEvent('resize'));
+      return false;
+     };
+     function onMouseUp(e) {
+      e.preventDefault();		// stlview: Objekt reht (bei Touch) trotzdem mit!
+      e.stopImmediatePropagation();
+      window.removeEventListener(mouse+"move",onMove,true);
+      window.removeEventListener(mouse+"up",onMouseUp,true);
+      window.removeEventListener("keydown",onMouseUp,true);
+      return false;
+     }
+     window.addEventListener(mouse+"move",onMove,true);
+     window.addEventListener(mouse+"up",onMouseUp,true);
+     window.addEventListener("keydown",onMouseUp,true);	// Im Fall eines Fehlers mit Taste (typischerweise ESC) den Resize-Modus abbrechen
+     return false;
+    }
+    var ecke=createEl("div",{"class":"resizer e"+j});	// generiert Mauspfeil und Positionierung via CSS
+    ecke.addEventListener(mouse+"down",onMouseDown,true);
+    div.appendChild(ecke);
+   }
+   for (var j=0; j<8; j++) createEcke(j);	// erst Kanten, dann Ecken, für den Mauspfeil
+  }
+  if (divs.length!==undefined) for (var i=0; i<divs.length; i++) createEcken(divs[i]);
+  else createEcken(divs);
+ }
+ function addClassToElements(sel,classname) {
+  for (var i=0;i<sel.length;i++) {
+   if (sel[i].classList) sel[i].classList.add(classname);	// neue Methode
+   else{
+    var c=sel[i].className;
+    if (c) c+=" "; else c="";
+    c+=classname;
+    sel[i].className=c;	// nur wenn className schreibbar
+   }
+  }
+ }
+// Steckverbinder (ol.sv) in Tabelle umwandeln
+// und die Form als Inline-SVG-Grafik visualisieren
+// Attribute bei <li> gehen verloren!
+ function sv2table(sv) {
+  var lis=sv.querySelectorAll("li");
+  var H=13;	// Höhe einer Tabellenzeile
+  var table=createEl("table",{"class":sv.className});
+  var inner="<tr height=4>";	// Platzhalter-Zeile
+  switch (sv.className) {
+   case "sv SubD": if (lis.length%2!=1) break;	// SubD-Stecker oder -Buchse
+    inner+="<td colspan=2>";	// Platzhalter
+//    table.border="1";
+    inner+="<td style='padding:0' rowspan="+(lis.length+3)+">";
+    inner+="<svg width=50 height="+(H*lis.length+16)+">\n";
+    inner+="<path d='M4 17a13,13 0 0 1 14.084,-11.818l17,5a13,13 0 0 1 9.916,11.818v"+(H*(lis.length-2)+2)+"a13,13 0 0 1 -9.916,11.818l-17,5a13,13 0 0 1 -14.084,-11.818z' fill='white' stroke='black' stroke-width='2'/>\n";
+    for (var j=0;j<lis.length;j++) {
+     if (lis[j].getAttribute("omit")===null)
+     inner+="<circle cx='"+(j%2?34:16)+"' cy='"+(H*j+16)+"' r='5' fill='gold' stroke='black' stroke-width='1'/>\n";
+    }
+    inner+="</svg>\n";
+    inner+="<td colspan=2 rowspan=2>";
+    for (var r=0;r<lis.length+1;r++) {
+     inner+="<tr height=13>";
+     if (r%2==0) {
+      var n=r/2;
+      inner+="<td rowspan=2 class=tl>"+lis[n].innerHTML;
+      inner+="<td rowspan=2 class=nl>"+(n+1);
+     }
+     if (r%2==1 && r!=lis.length) {
+      var n=(r+lis.length)/2
+      inner+="<td rowspan=2 class=nr>"+(n+1);
+      inner+="<td rowspan=2 class=tr>"+lis[n].innerHTML+"\n";
+     }else if (r==lis.length) {
+      inner+="<td colspan=2 rowspan=2>\n";
+     }
+    }
+    inner+="<tr height=4><td colspan=2>\n";
+   break;
+
+   case "sv PfostenL":	// Pfostenstecker 1-reihig, links beschriftet
+   case "sv JSTL":	// JST-Stecker
+    inner+="<td colspan=2>";	// Platzhalter
+   case "sv PfostenR":	// Pfostenstecker 1-reihig, rechts beschriftet
+   case "sv JSTR":	// JST-Stecker
+    var h=H*2*lis.length;
+    inner+="<td style='padding:0' rowspan="+(lis.length+2)+">";
+    var jst = sv.className.indexOf("JST")>=0;
+    var xl=H-4, yo=12, more="width='8' height='8' fill='gold'";
+    if (jst) {
+     inner+="<svg width=30 height="+(h+8)+">\n";
+     inner+="<path d='M0,"+(h/2-7)+"V5H30V"+(h+6)+"H0V"+(h/2+17)+"' fill='none' stroke-width='3' stroke='black'/>";
+     xl=10; yo=15; more="width='7' height='7'";
+    }else{
+     inner+="<svg width="+H*2+" height="+(h+8)+">\n";
+     inner+="<rect x='0' y='3' width='"+H*2+"' height='"+h+"'/>\n";
+    }
+    for (var j=0;j<lis.length;j++) {
+     if (lis[j].getAttribute("omit")===null)
+     inner+="<rect x='"+xl+"' y='"+(H*2*j+yo)+"' "+more+"/>\n";
+    }
+    inner+="</svg>";
+    if (sv.className.endsWith("R")) inner+="<td colspan=2>";
+    for (var n=0,k=sv.start;n<lis.length;n++,k+=sv.reversed?-1:1) {
+     inner+="<tr height=13>";
+     if (sv.className.endsWith("R")) {
+      inner+="<td class=nr>"+k;
+      inner+="<td class=tr>"+lis[n].innerHTML;
+     }else{
+      inner+="<td class=tl>"+lis[n].innerHTML;
+      inner+="<td class=nl>"+k;
+     }
+    }
+    inner+="<tr height=4><td colspan=2>";
+   break;
+   
+   case "sv DIP":	// DIL-Schaltkreis (schmal)
+   case "sv Wanne":	// Wannenstecker
+   case "sv Pfosten":	// Pfostenstecker 2-reihig
+   case "sv Direkt":	// Direktstecker (Platinenkante)
+    console && console.assert(lis.length%2==0,"Listenlänge sollte gerade sein!");
+    inner+="<td colspan=2>";	// Platzhalter
+    inner+="<td style='padding:0' rowspan="+((lis.length+1>>1)+2)+">";
+    var h=H*2*(lis.length+1>>1);
+    var xl,xr,yo=12,elname="rect",more="";
+    switch (sv.className) {
+     case "sv DIP":
+     inner+="<svg width=70 height="+(h+8)+">\n";
+     inner+="<path d='M5,4H28A7,7 0 0 0 42,4H65V"+(h+6)+"H5Z' fill='gray' stroke-width='1' stroke='black'/>\n";
+     inner+="<circle cx='16' cy='15' r='5'/>\n";
+     xl=1; xr=65; more="width='4' height='13' fill='white' stroke-width='1' stroke='black'";
+     break;
+     case "sv Wanne":
+     inner+="<svg width=60 height="+(h+12)+">\n";
+     inner+="<rect x='2' y='6' width='56' height='"+(h+4)+"' fill='gray'/>\n";
+     inner+="<path d='M3,"+(h/2-10)+"V5H57V"+(h+8)+"H3V"+(h/2+24)+"' fill='none' stroke-width='6' stroke='black'/>\n";
+     xl=13; xr=39; xo=15; more="width='8' height='8' fill='gold'";
+     break;
+     case "sv Pfosten":
+     inner+="<svg width="+H*4+" height="+(h+8)+">\n";
+     inner+="<rect x='0' y='4' width='"+H*4+"' height='"+h+"'/>\n";
+     xl=H-4; xr=H*3-4; yo=13; more="width='8' height='8' fill='gold'";
+     break;
+     case "sv Direkt":
+     inner+="<svg width=30 height="+h+">\n";
+     inner+="<rect x='10' y='5' width='10' height='"+h+"' fill='green'/>\n";
+     xl=7; xr=20; yo=10; more="width='3' height='13' fill='gold'";
+     break;
+    }
+    for (var j=0;j<lis.length;j++) {
+     var x = j&1 ? xr : xl;
+     var y = H*2*(j>>1)+yo;
+     if (lis[j].getAttribute("omit")===null)
+       inner+="<"+elname+" x='"+x+"' y='"+y+"' "+more+"/>\n";
+    }
+    inner+="</svg><td colspan=2>\n";
+    for (var r=0;r<lis.length/2;r++) {
+     inner+="<tr height=13>";
+     var n=2*r; if (sv.className=="sv DIP") n=r;
+     inner+="<td class=tl>"+lis[n].innerHTML;
+     inner+="<td class=nl>"+(n+1);
+     n=2*r+1; if (sv.className=="sv DIP") n=lis.length-1-r;
+     inner+="<td class=nr>"+(n+1);
+     inner+="<td class=tr>"+lis[n].innerHTML+"\n";
+    }
+    inner+="<tr height=4><td colspan=2><td colspan=2>\n";
+   break;
+  }
+  table.innerHTML=inner;
+  sv.parentNode.replaceChild(table,sv);
+ }
+// <img> in <object> umwandeln, für Vektorgrafik. Im Falle von XSLT-generierter Vektorgrafik in <iframe>.
+ function img_object(img){
+  var iframe=img.src.match(/as=SVG$/);	// XSLT-Prozessor am Werk
+  if (img.target) img=img.target;	// im Fall von onerror
+  var p=createEl(iframe?"iframe":"object");
+  p.addEventListener("load",function(e){		// wirkungslos bei Chrome und XSLT: Bild bleibt zu klein.
+   var svgDoc=iframe ? p.contentWindow.document : p.contentDocument;
+// manchmal kommt da (bei object svg) trotzdem NULL!! Unklar warum.
+   if (svgDoc) {
+    var svg=svgDoc.querySelector("svg");
+    var w=svg&&svg.getAttribute("width")||"640px";
+    var h=svg&&svg.getAttribute("height")||"360px";
+    p.setAttribute("style","width:"+w+";height:"+h+";border-width:0;");
+    if (iframe) p.setAttribute("scrolling","no");	// keine inneren Rollbalken (nur Chrome, Edge)
+// Chrome, Edge machen um <svg> ein <body> mit 8 Pixel Margin rundherum
+    var body=svgDoc.querySelector("body");
+    if (body) body.setAttribute("style","margin:0");
+//   makeSizeable(p.parentNode);
+   }else{
+    p.removeAttribute("width");
+    p.removeAttribute("height");
+    console.log("Kein contentWindow.document oder contentDocument für Element: ",p);
+   }
+  });
+  
+  var src=new URL(img.src);	// der kommt hier als komplette URL an!
+  src=src.pathname;		// „relativieren“
+  if (src.match(/\.[we]mf$/i)) {
+   if (src.match(/\.zip\//)) src+="?as=SVG";	// viewzip.php braucht (zurzeit) diesen Suffix.
+   else{			// Meistens habe ich's in die .htm-Dateien so 'reingeschrieben;
+    const r=getRoot()+'/';	// URL::pathname schneidet das wieder ab, das landet bei URL::search.
+    src=r+"wmf2svg.php/"+src.substring(r.length);
+   }
+  }
+  p.setAttribute(iframe?"src":"data",src);
+  p.className=img.className;
+  if (img.id) p.setAttribute("id",img.id);
+  p.setAttribute("type","image/svg+xml");
+  p.setAttribute("width",640);	// Anfängliche Größe 16:9, wird von onload() überschrieben
+  p.setAttribute("height",360);
+  p.appendChild(document.createTextNode(_tr("nosvg")));
+  img.parentNode.replaceChild(p,img);
+//  p.parentNode.className="sizeable";
+  return p;
+ }
+// Veraltet, X3D gehört auf den Müllhaufen (zumindest als Export aus CAD-Programmen), die Zukunft gehört iSTL
+ function img_x3d(img) {
+  var url="/x3dview.htm?"+img.src;
+  var p=createEl("iframe",{src:url,width:500,height:500,scrolling:"no",style:"border:1px solid rgba(0,255,255,0.2);background:rgba(0,255,255,0.2)"});
+  img.parentNode.replaceChild(p,img);
+  return p;
+ }
+// (Versuch der) browserseitigen Konvertierung von WMF- und 2D-Eagle-Dateien
+ function img_svg(img) {
+  var src=new URL(img.src);	// der kommt hier als komplette URL an!
+  src=src.pathname;		// „relativieren“
+  if (src.match(/\.wmf$/i)) {
+   let obj;
+   import(getRoot()+"/wmf2svg.js")
+   .then(function(o) {obj=o; return fetch(src);})
+   .then(function(r) {return r.blob();})
+   .then(function(b) {return b.arrayBuffer();})
+   .then(function(a) {img.parentNode.replaceChild(obj.wmf2svg(a),img);})
+   .catch(function(e) {console.log(e);});
+  }
+ }
+ function eagle_svg(img) {
+  var src=new URL(img.src);	// der kommt hier als komplette URL an!
+  src=src.pathname;		// „relativieren“
+  if (src.match(/\.(sch|brd|lbr)/i)) {
+   let obj;
+   import(getRoot()+"/eagle2svg.js")
+   .then(function(o) {obj=o; return fetch(src);})
+   .then(function(r) {return r.text();})
+   .then(function(t) {
+    const parser=new DOMParser();
+    const xml=parser.parseFromString(t,"text/xml");
+    img.parentNode.replaceChild(obj.eagle2svg(xml),img)
+   })
+   .then(function(e) {;})
+   .catch(function(e) {console.log(e);});
+  }
+ }
+ function img_object_svg_all() {	// Hier keine neuen Javascript-Features!
+//  var imgs=document.getElementsByTagName("img");	// Das liefert eine "live node list"!! Blöd, da diese verändert wird.
+  var imgs=document.querySelectorAll("img");		// querySelectorAll liegt als Polyfill vor.
+//  console.log(imgs);
+  for (var i=0; i<imgs.length; i++) {
+   var img=imgs[i];
+   if (!img.parentNode) throw "Cannot handle IMG without parentNode";
+   if (img.className.match(/^tn$/)) continue;	// Thumbnail-SVGs nicht konvertieren
+   if (img.src.match(/svg$/i)) img_object(img);	// Für Edge vorauseilende Korrektur (zu spät für onerror)
+   else if (img.src.match(/(stl|wrl)$/i)) img_canvas(img);
+   else img.onerror=onimgerror;
+  }
+ }
+// <img> in <div> umwandeln, für STL-Dateien
+// MUSS PARENTNODE HABEN!!
+ function img_canvas(img){
+  var pn=img.parentNode;
+  if (!pn) {
+   console.error("Keine ParentNode!!");
+   return;
+  }
+  var id=img.id||"BR"+Math.floor((Math.random()*10000));
+  var p=createEl("div",{id:id,"class":"sizeable stl",tabindex:1});
+  var url=img.src;	// sollte auf .stl enden
+  pn.replaceChild(p,img);	// schon mal ersetzen
+  makeSizeable(p);
+  if (window.stlview) g_stlviews.set(pn,stlview(p,url));	// Wenn bereits geladen, sofort ausführen
+  else{
+   if (!g_stlloads[0]) {	// JavaScript nur 1× laden
+    var js=createEl("script",{type:"text/javascript",src:getRoot()+"/stlview.js"});
+    js.onload=function(){
+     g_stlloads.forEach(function(l){g_stlviews.set(l.pn,stlview(l.p,l.url))});
+     g_stlloads=undefined;
+    }	// verzögert ausführen
+    document.head.appendChild(js);	// JavaScript laden
+   }
+   g_stlloads.push({pn:pn,p:p,url:url});
+  }
+ }
+ function onimgerror(el) {
+  if (el.target) el=el.target;
+  if (!el.parentNode) {
+   console.log("Cannot handle "+el.nodeName+" without parentNode");
+   return;
+  }
+  if (el.src.match(/\.[we]mf$/i)) return img_svg(el);	// in direkt eingebettetes SVG wandeln
+  if (el.src.match(/\.(sch|brd|lbr)(|\?.*)$/i)) return eagle_svg(el);
+  if (el.src.match(/(svg$|[we]mf)/i)) return img_object(el);
+  if (el.src.match(/([if]?stl|wrl)$/i)) return img_canvas(el);
+  if (el.src.match(/\.x3d$/i)) return img_x3d(el);
+  console.log("Ladefehler: ",el);
+// TODO: Ladefehler per Mail an mich petzen
+ }
+// <object>/<iframe> zurück in <img> umwandeln, für Pixelgrafik
+ function object_img(obj,url) {
+  var p=createEl("img");
+  if (obj.id) p.setAttribute("id",obj.id);
+  obj.parentNode.replaceChild(p,obj);
+  p.onerror=onimgerror;
+  p.src=url;
+  return p;
+ }
+// Hier geht onLoad los!
+// 1a. Für Handy optimieren
+ document.head.appendChild(createEl("meta",{name:"viewport",content:"width=device-width, initial-scale=1"}));
+// 1b. META/LINK/SCRIPT im BODY (bei Verzeichnislisten) in HEAD umbewegen
+ for(;;) {
+  var fc=b.firstElementChild;
+  if (["META","LINK","SCRIPT"].indexOf(fc.tagName)<0) break;
+  document.head.appendChild(fc);
+ }
+// 1c. Favicon verlinken, verzeichnisweise, NEU ohne serverseitiges Redirect
+ if (!document.head.querySelector("link[rel$=\"icon\"]")) {
+  var root=getRoot()+'/';
+  var dirs={hm:"hsmw.ico",ewa:"ewa.ico",mb:"iwp.ico",mt:"must.ico",enas:"enas.ico",
+	hs:"msvc6.ico",kc:"mpm.ico",kg:"electronics.gif",hg:"spaten.png",fz:"auto.png",
+	pc:"laptop.png",pg:"laptop.png",usb:"laptop.png",ddr:"hfo.svg"};
+  var icon="favicon.ico";
+  var p=window.location.pathname.substring(root.length);
+  for (var k in dirs) if (!p.indexOf(k)) {icon="icons/"+dirs[k]; break;}	// Wenn es mit einem der Verzeichnisse anfängt, <icon> überschreiben
+  document.head.appendChild(createEl("link",{rel:"icon",href:root+icon}));	// absoluten Pfad ausspucken
+ }
+// 2. Sprache der HTML-Datei feststellen
+ lang = document.getElementsByTagName("html")[0].getAttribute("lang");
+ if (!lang) {
+  var u=window.location.pathname;
+  var p=u.indexOf(".htm");
+  if (p>10 && u.charAt(p-3)==".") lang=u.substr(p-2,2);
+ }
+ if (!lang && document.title.indexOf("freeware list")>=0) lang="en";	// Extrawurst
+// 3. Titel von Verzeichnislisten ändern
+ if (document.title.match(/^Index of /)) {	// Vorgabe von Apache
+  var h1=b.getElementsByTagName("h1")[0];
+  if (h1) {
+   var t=h1.textContent;
+   if (!t) t=h1.innerText;
+   if (t) document.title=t;
+  }
+ }
+// 4. Mittels <section> umstrukturieren und Inhaltsverzeichnis erstellen (noch nicht einhängen)
+ var content=createEl("nav");
+ addSections(b,content,2);
+// 5. Lokale Links mit Suchrichtung versehen. Links auf Cookieschleudern mit Titel versehen
+ var a_tracked = document.querySelectorAll("a.tracked");
+ for (var i=0; i<a_tracked.length; i++) a_tracked[i].setAttribute("title",_tr("tracked"));
+ BezugRichtung(b);
+// 6. Texte nach Zahl mit Einheit durchsuchen und Leerzeichen durch &nbsp; ersetzen
+ ErsZahlEinheit(b);
+// 8. Multi-Bilder (innerhalb von <figure> gibt's genau ein <ul>)
+// umformatieren zu einem Formular mit Radiobuttons
+ var figures=document.querySelectorAll("figure,div.fig");
+ Lupe();	// 9. Miniaturgrafiken mit Lupenfunktion versehen
+ Invis();	// 10. Neue unsichtbare Blöcke
+ g_onimgerror=function(e){onimgerror(e)};
+ g_object_img=object_img;
+ MultiBild(figures);
+// 10. IE8-SVG-Darstellung
+ img_object_svg_all();
+// 11. Inhaltsverzeichnis davorsetzen (nur wenn es <h1> und <h2> gibt)
+// Der Inhalt wurde bereits zuvor mit addSections() herausgefischt.
+ if (b.getElementsByTagName("h1").length && content.hasChildNodes()) {
+  var toc1=createEl("div",{id:"NavBar"});
+  toc1["on"+mouse+"down"]=showContent;
+  toc1.innerHTML=_tr("Inhalt");
+  content.id="Nav";
+  content.onclick=hideContent;
+  content.appendChild(createEl("div",{id:"X",title:_tr("close")},[document.createTextNode("X")]));
+  b.insertBefore(content,b.firstChild);
+  b.insertBefore(toc1,b.firstChild);
+ }
+// 12. Sprachauswahl davorsetzen, Erstelldatum parsen
+// TODO evtl.: Umbau der Datumsangabe mit <time datetime="yyyy-mm-dd_hh:mm">Zeitangabe</time>
+ var metas = document.head.getElementsByTagName("meta");
+// PROBLEM: <metas.resp> und <metas.date> leer wenn x3dom-full.js läuft!
+ var A="";
+ for (var i=0;i<metas.length;i++) switch (metas[i].getAttribute("name")) {
+  case "resp": A+="<p class=invis-resp>"+_tr("resp")+": "+metas[i].content; break;
+  case "date": A+=address(metas[i].content); break;
+ }
+ var l="";	// Sprachauswahl (Fähnchen) links oben
+ var links=document.head.getElementsByTagName("link");
+ var navbar={};	// Navigation (Klartext) rechts unten
+ for (var i=0; i<links.length; i++) {
+  var rel=links[i].getAttribute("rel");
+  var href=links[i].getAttribute("href");
+  var title=links[i].getAttribute("title");
+  switch (rel) {
+   case "alternate": {	// Sprach-Alternative vorhanden?
+    var lng=links[i].getAttribute("lang");
+    if (!lng) {
+     var dot1=href.indexOf('.')+1;
+     var dot2=href.indexOf('.',dot1);
+     lng=href.substring(dot1,dot2);
+    }
+    switch (lng) {
+     case "de": l+=" <a class=nul href=\""+href+"\" title=\"Deutscher Originaltext\">🇩🇪</a>"; break;
+     case "en": l+=" <a class=nul href=\""+href+"\" title=\"English hand-made translation\">🇬🇧</a>"; break;
+     case "jp": l+=" <a class=nul href=\""+href+"\" title=\"日本語\">🇯🇵</a>"; break;
+     case "cn": l+=" <a class=nul href=\""+href+"\" title=\"中文\">🇨🇳</a>"; break;
+    }
+   }break;
+   case "frameset":
+   case "up":
+   case "next":
+   case "prev": {
+    if (!title && (title=strLinkText(rel,href)))
+	navbar[rel]=createEl("a",{href:back_replace(href)},[document.createTextNode(title)]);
+   }break;
+  }
+ }
+ if ((!lang || lang=="de") && !l) {	// stets Google-Übersetzung anbieten
+  var href=encodeURIComponent(window.location);
+  var k=href.indexOf("?");
+  if (k<0) k=href.indexOf("%3F");
+  if (k>=0) href=href.substr(0,k);
+  l+=" <a class=nul href=\"https://translate.google.de/translate?sl=de&tl=en&u="+href+"\" title=\"Google translation\">🇬🇧</a>";
+ }
+ if (navbar.frameset && window==window.top) {
+  var p=createEl("center",{title:_tr("frameset")});
+  p.appendChild(navbar.frameset);
+  b.insertBefore(p,b.firstChild);
+ }
+// 13. "Eine Verzeichnisebene hoch" anbieten
+ if (!navbar.up) {
+// (Lineare Navigation ist bereits oben herausgefischt. Bissel blöd.)
+  var u=window.location.pathname.substring(getRoot().length+1);	// ergibt Leerstring für Startseite
+  if (u) {
+   p=u.lastIndexOf("/");	// Verzeichnisansichten außer Startseite haben stets "/" am Ende; "a" hat kein 
+   if (p>=0) {
+    u=u.substr(0,p);		// "a/b" wird zu "a" und "a/b/" wird zu "a/b"
+    p=u.lastIndexOf("/");
+    if (p>=0) u="/"+u.substr(p+1);	// "a" wird zu "/" und "a/b" wird zu "/a"
+    else u="/";
+    navbar.up=createEl("a",{href:back_replace(u)},[document.createTextNode(strLinkText("up",u))]);	// Hackversuch erscheint schlimmstenfalls als Text, nie als HTML (also <script>)
+   }
+  }
+ }
+ navbar.any = navbar.prev || navbar.next || navbar.up;
+// 14. Quelltext-Abschnitte mit Syntaxhervorhebung
+ var pres=document.querySelectorAll("pre[class]");
+ if (pres&&pres.length) {
+  var js=createEl("script",{type:"text/javascript",src:getRoot()+"/sh.js"});
+  js.onload=function() {
+   for (var i=0; i<pres.length; i++) if (pres[i].className) hilitePre(pres[i]);
+  }
+  document.head.appendChild(js);
+ }
+// 15. Kopf- und Fuß-Strings anfügen
+ var footer;
+ if (navbar.any || A) {
+  footer=createEl("footer");
+  b.appendChild(footer);
+ }
+ if (navbar.any) {	// Fuß-String (Navigation)
+  var nav=createEl("nav",{title:"Navigation"});
+  if (navbar.prev) nav.appendChild(navbar.prev);
+  if (navbar.next) nav.appendChild(navbar.next);
+  if (navbar.up)   nav.appendChild(navbar.up);
+  footer.appendChild(nav);
+ }
+ if (l) {	// Sprachauswahl-String
+  var div=createEl("div",{id:"LangSel",class:"noprint"});
+  div.innerHTML=l;
+  b.insertBefore(div,b.firstChild);
+ }
+ if (A) {
+  var adr=createEl("address");
+  footer.appendChild(createEl("hr"));
+  footer.appendChild(adr);
+// TODO: Link auf Lizenztexte
+  A+="<a class=suppress_before href=\"https://de.wikipedia.org/wiki/Creative_Commons\"><img src=\"https://upload.wikimedia.org/wikipedia/commons/e/e1/CC_BY_icon.svg\" align=right title=\"gemeinfrei bei Namensnennung\"></a>\n";
+  var de=navigator.languages;
+// Hier keine Pfeilfunktion und auch kein Array.prototype.some()
+  if (de&&de.length) for (var i=0; i<de.length; i++) if (de[i].indexOf("de")>=0) {de=i+1; break;}
+  else de=0;
+  if (de) {	// ohne Deutsch keine Telefonnummern, nein!
+   A+="<table>\n";
+   if (de!=1) {
+    A+="<tr><th title=\"Telefonnummern für sekundär akzeptierte Sprache Deutsch\">\n";
+   }else{
+    A+="<tr><th rowspan=3 title=\"Telefonnumern für primär akzeptierte Sprache Deutsch\">\n";
+    A+="<td title='Festnetz'><td><a href=\"tel:+4937127555500\" title=Kabelmodem>0371-27555500</a> (Chemnitz)\n";
+    A+="<tr><td title='Smartphone'><td><a href=\"sgnl://signal.me/#p/+4917621695671\">Signal</a>\n";
+   }
+   A+="<tr><td title='Handy'><td><a href=\"tel:+4917621695671\" title=\"O₂\">0176-21695671</a> = <a href=\"tel:+493713396018\" title=Chemnitz>0371-3396018</a> <small>(<time>8:00–24:00</time>)</small>\n";
+   A+="</table>\n";
+  }
+  adr.innerHTML=A;
+ }
+ var locallinks=document.querySelectorAll("a[href^='#']");
+ for (var i=0; i<locallinks.length; i++) {
+  locallinks[i].onclick=function(e){
+   animateTarget(this.href.substr(this.href.indexOf("#")+1));
+  };
+ }
+ var svs=document.querySelectorAll("ol.sv");
+ for (var i=0; i<svs.length; i++) sv2table(svs[i]);
+// 16. Sortierbare Tabellen, Tabellen mit von rechts lesbarem Tabellenkopf, lange Tabellen
+ makeCcwHeader();
+ sorttable.init();
+// addClassToElements(document.querySelectorAll("x3d,img[src$='SVG'],iframe,:not(table) svg"),"sizeable");
+ makeSizeable(document.querySelectorAll(".sizeable"));
+// 17. XSLT-Objekte korrigieren — Hat sich 2021 erledigt, indem diese in <iframe> statt <object> platziert wurden
+// 18. HTML-fähige Tooltips anbauen
+ htmlTooltips(document);
+// 19. Auf Breitenveränderung <h> und <aside> vertauschen (weil's nicht mit CSS geht)
+ (window.onresize=onSizeChange)();
+// 20. Animationen starten
+ if (nav) {
+  startslidein(nav,true);		// bewirkt Einschieben von der Seite, aber auch Scrollbar bei <body>
+  window.onscroll=function(e) {
+   startslidein(nav,true);
+  }
+ }
+ if (window.localAnchor) setTimeout(function(e){grayoutNonTarget(window.localAnchor)},100);	// Wenn die Darstellung fertig ist
+}
+
+// Firefox: Frisst Rechenleistung(?)
+/*if (window.onDOMContentLoaded) window.onDOMContentLoaded=onLoad;
+else*/ if (document.addEventListener) document.addEventListener("DOMContentLoaded",onLoad,false);
+else if (window.attachEvent) window.attachEvent("onload",onLoad);
+else window.onload=onLoad;	// Handler zuweisen
+
+// Hilfsfunktionen (Canvas)
+function line(dc,x,y,xe,ye) {
+ dc.beginPath();
+ dc.moveTo(x,y);
+ dc.lineTo(xe,ye);
+ dc.stroke();
+}
+function circle(dc,x,y,r) {
+ dc.beginPath()
+ dc.arc(x,y,r,0,2*Math.PI,false);	// Firefox 3.6 benötigt 6. Argument (false)
+ dc.stroke();
+}
+
+// Tooltips mit HTML-Inhalt: Verweis mit Attribut "tip=#label",
+// der Tip in <tip id=label>Inhalt</tip> irgendwo im Dokument,
+// oder Inhalt mit Attribut "tip=content",
+// Vor allem für komfortable Eagle-Tooltips interessant,
+// aber derzeit enthält der <description>-Text „escapte“ HTML-Sequenzen,
+// die noch nicht in HTML umgesetzt werden
+
+function htmlTooltips(root) {
+ try{	// IE8 kann kein CSS3 in QuerySelectorAll: Ignorieren
+  var x=document.querySelectorAll("tip:not([id])");
+  for (var i=0; i<x.length; i++) {
+   x[i].parentNode.setAttribute("tip","");
+  }
+ }catch(err){}
+ var tips=root.querySelectorAll("[tip]");
+ for (var i=0; i<tips.length; i++) {
+  tips[i].addEventListener("mouseover",function(e) {
+   var tip=e.target;
+   var to=setTimeout(function() {
+    var val=tip.getAttribute("tip");
+    var box;
+    if (val=="") box=tip.querySelector("tip");
+    else if (val.charAt(0)=='#') box=root.querySelector(val);
+    else{	// tip-Attribut leeren und <tip> unterhalb anordnen
+     box=root.createElement("tip");
+     box.innerHTML=val;	// Inhalt umsetzen
+     e.target.appendChild(box);
+     e.target.setAttribute("tip","");
+    }
+    box.style.display="block";
+    box.style.left=e.pageX+"px";
+    box.style.top=e.pageY+20+"px";
+    e.target.addEventListener("mouseout",function(e) {
+     box.style.display="none";
+    },false);
+   },200);
+   tip.addEventListener("mouseout",function() {
+    clearTimeout(to);
+   },false);
+  },false);
+ }
+}
+
+/* SortTable.js ab hier eingefügt sowie angepasst: deutsche Zahlen, strict-Modus
+   TODO: Nach Spalten sortieren */
+var sorttable = {
+ init: function() {
+  var tables=document.querySelectorAll("table.sortable");
+  for (var i=0;i<tables.length;i++) this.makeSortable(tables[i]);
+ },
+ sortFunction: function(table,th,noreverse) {
+  if (!noreverse && th.className.search(/\b(sorted|reversed)\b/) != -1) {
+    // if we're already sorted by this column, just
+    // reverse the table, which is quicker
+   this.reverse(table);
+  }else{
+// build an array to sort. This is a Schwartzian transform thing,
+// i.e., we "decorate" each row with the actual sort key,
+// sort based on the sort keys, and then put the rows back in order
+// which is a lot faster because you only do getInnerText once per row
+   var a = [];
+   var tb = table.tBodies[0];
+   var rows = tb.rows;
+   var col=th.columnindex;
+   for (var j=0; j<rows.length; j++) {
+    var tag=this.getCellText(rows,col,j);
+    var dir=this.getDirCheck(rows,j);
+    a[j]={dir:dir,tag:tag,row:rows[j]};
+   }
+   this.sort(a,th.sortfunction);
+   for (var j=0; j<a.length; j++) tb.appendChild(a[j].row);	// sortiert DOM um
+   this.checkSort(table);
+  }
+  this.group(table);
+ },
+// Prüft ob Tabellenzeile ein Verzeichnis ist, das voran sortiert werden soll
+ getDirCheck: function(rows,y) {
+  var dir=document.getElementById("dir_first");
+  return dir && dir.checked && this.getCellText(rows,this.filenamecolumn,y).substr(-1)=="/";
+ },	 
+// Prüft die Tabelle auf (bereits) sortierte Spalten
+ checkSort: function(table) {
+  var h=table.headRow.cells;
+  var rows=table.tBodies[0].rows;
+  for (var i=0;i<h.length;i++) if (h[i].sortfunction) {	// Über alle Spalten …
+   var th=h[i];		// remove class entry:
+   th.className=th.className.replace(/\b(sorted|reversed)\b/,'');
+   if (rows.length>1) {		// Nicht bei 0 oder 1 Datenzeilen
+    var up=true;		// gucken ob aufwärts sortiert
+    var dn=true;		// gucken ob abwärts sortiert
+    var key=this.getCellText(rows,th.columnindex,0);	// Erste Datenzeile
+    var dir=this.getDirCheck(rows,0);
+    for (var j=1; j<rows.length; j++) {
+     var nkey=this.getCellText(rows,th.columnindex,j);
+     var ndir=this.getDirCheck(rows,j);
+     var diff=dir-ndir;
+     if (!diff) diff=th.sortfunction(nkey,key);
+     if (!(diff>=0)) up=false;	// Nicht (mehr) aufwärts
+     if (!(diff<=0)) dn=false;	// Nicht (mehr) abwärts
+     if (!up&&!dn) break;	// Weitervergleichen sinnlos
+     key=nkey;			// für nächste Runde
+     dir=ndir;
+    }
+    if (up) th.className+=' sorted';	// Wenn beides dann auch "sorted"
+    else if (dn) th.className+=' reversed';
+   }
+  }
+ },
+ group: function(table) {	// Gruppierungs-Trennstriche erzeugen bzw. wegnehmen
+  var x,gd;
+  for (x=0; x<table.headRow.cells.length; x++) {
+   var th=table.headRow.cells[x];
+   if (th.className.match(/\b(sorted|reversed)\b/)) {
+    gd=th.getAttribute("data-group");	// Entweder eine Zahl ("alle xx Zeilen") oder ein regulärer Ausdruck
+    break;
+   }
+  }
+  var a0;
+  for (var y=0; y<table.tBodies[0].rows.length; y++) {
+   var tr=table.tBodies[0].rows[y];
+   tr.className=tr.className.replace(/\bendgroup\b/,'');
+   if (gd			// Gruppendefinition vorhanden?
+   && y+1!=table.tBodies[0].rows.length) {	// Nicht-letzte Zeile?
+    if (parseInt(gd)==gd) {	// Numerisch? (Alle xx Zeilen gruppieren)
+     if (y%gd==gd-1) tr.className+=" endgroup";
+    }else{
+     var s1=this.getCellText(table.tBodies[0].rows,x,y+1);	// Text der Folgezeile
+     var a1=s1.match(gd);	// Nach regulärem Ausdruck gruppieren
+//     console.log(s1,a1,gd);
+     if (a1 && a0 && a1[1]!=a0[1]
+     || a1 && !a0		// Wechsel der Gültigkeit
+     || !a1 && a0) tr.className+=" endgroup";
+     a0=a1;
+    }
+   }
+  }
+ },
+ makeSortable: function(table) {
+  table.headRow = table.getElementsByTagName('thead')[0].rows[0];
+  table.headRow.title=_tr("sort");
+  if (table.className.match(/\bfilelist\b/)) {
+// prepend such a table with a “directories first” checkmark if it contains directories.
+// The file name column has to be the one with "colspan=2",
+// and directory names have to end with slash.
+   var b=table.tBodies[0];
+   if (!b) return;
+   var r=b.rows;
+   var c=r[0].cells;
+   for (var i=0; i<c.length; i++) {
+    if (c[i].colSpan==2) {
+     this.filenamecolumn=i;	// tack this “attribute” to this object
+     break;
+    }
+   }
+   if (this.filenamecolumn>=0) {	// Found leftmost column for file names.
+    for (var j=0; j<r.length; j++) {
+     var c=r[j].cells[this.filenamecolumn];
+     var t=c.textContent;
+     if (!t) t=c.innerText;
+     if (t.substr(-1)=='/') {
+	// Found one name with "/" at end, so create the necessary checkbox and exit loop
+      var n=createEl("input",{id:"dir_first",type:"checkbox"});
+      //n.checked=true;
+      var self=this;
+      n.onchange=function(e) {
+       var h=table.headRow.cells;
+       var i;
+       for (i=0; i<h.length; i++) 
+	 if (h[i].className.match(/\b(sorted|reversed)\b/)) {	// find one sorted column
+        self.sortFunction(table,h[i],true);
+	break;
+       }
+      }
+      table.parentNode.insertBefore(n,table);
+      n=createEl("label",{"for":"dir_first"});
+      if (n.textContent) n.textContent=_tr("dirfirst");
+      else n.innerText=_tr("dirfirst");
+      table.parentNode.insertBefore(n,table);
+      break;
+     }
+    }
+   }
+  }
+    // work through each column and calculate its type
+  var ths = table.headRow.cells;	// Nur 1. Zeile!
+  var j=0;
+  for (var i=0; i<ths.length; i++) {
+      // manually override the type with "class=sort_type"
+   var override="";
+   var th=ths[i];
+   if (!th.className.match(/\bnosort\b/)) { // skip this col
+    var mtch = th.className.match(/\b(sort_[a-z0-9]+)\b/);
+    if (mtch) { override = mtch[1]; }
+    if (override && typeof this[override] == 'function') {
+     th.sortfunction = this[override];	// tack comparer function to head cell
+    }else{
+     th.sortfunction = this.guessType(table.tBodies[0].rows,j);
+    }
+	// make it clickable to sort
+	//if (table.filenamecolumn>=0 && j>table.filenamecolumn) --j;
+    th.columnindex = j;
+    var self=this;
+    th.onclick=function(e) {
+     self.sortFunction(table,e.target);
+    };
+   }
+   j+=th.colSpan;	// ".colSpan" gibt's anscheinend immer
+  }
+//  this.addSortkeys(table);
+  this.checkSort(table);
+  this.group(table);
+ },
+// Spalten mit dem Label "sorted" einen "sortkey" verpassen
+/*
+ addSortkeys: function(table) {
+  var h=table.headRow.cells;
+  var rows=table.tBodies[0].rows;
+  for (var i=0;i<h.length;i++) if (h[i].className.match(/\bsorted\b/)) {
+   var col=h[i].columnindex;
+   for (var j=0;j<rows.length;j++) {	// TODO: colspan abzählen
+    rows[j].cells[col].setAttribute("sortkey",j);
+   }
+   h[i].sortfunction=this.sort_numeric;
+  }
+ },
+*/
+ guessType: function(rows,col) {
+    // guess the type of a column based on all non-blank rows
+  for (var i=0; i<rows.length; i++) {
+   var txt = this.getCellText(rows,col,i);
+   if (txt) {
+    if (txt.match(/^0\d/)) return this.sort_alpha;	// Telefonnummern
+    if (!txt.match(/^[+-]?[\d,.]+/)) return this.sort_alpha;
+   }
+  }
+  return this.sort_numeric;
+ },
+// Return file name extension (for “right side” of columns with colspan=2)
+ ext: function(s) {		// Get file name extension (no "." at start)
+  var i;			// 1. No dot == no extension (i == -1)
+  var j=s.length;
+  if (s.substr(j-1)=='/') s=s.substr(0,--j);	// remove trailing backslash and change length
+  for (;;--j) {			// 2. Dot(s) at string end don't count
+   i=s.lastIndexOf('.',j);	// 3. Only dot at start = no extension (i == 0)
+   if (i<=0) break;		// dots only (..) or hidden filename with . at first
+   if (i!=j-1) break;		// normal case, break "abc.exe" or "def.nix.." with i==3
+  }
+  return i>0?s.substr(i+1):"";	// deliver rest of string
+ },
+// Return text from table coordinate (x,y), checking for <colspan>.
+// “Colspanned” coordinates return empty string, except for "filenamecolumn" columns.
+// TODO: <rowspan> is not checked at all!
+ getCellText:function(rows,x,y) {
+  var i,j,n;
+  if (this.filenamecolumn===x-1) return this.ext(this.getInnerText(rows[y].cells[x-1]));
+  for (i=j=0; j<=x; i++) {
+   n=rows[y].cells[i];
+   if (!n) return "";		// im Fehlerfall
+   j+=n.colSpan;
+  }
+  var t=this.getInnerText(n);
+//  if (numeric && !n.getAttribute("sortkey")) {
+//   n.setAttribute("sortkey",t);		// Attribut für nächste Sortierung setzen
+//  }
+  return t;
+ },
+ getInnerText: function(node) {
+	// gets the text we want to use for sorting for a cell.
+	// strips leading and trailing whitespace.
+	// this is *not* a generic getInnerText function; it's special to sorttable.
+	// for example, you can override the cell text with a customkey attribute.
+	// it also gets .value for <input> fields.
+  if (!node) return "";
+  if (node.getAttribute) {
+   var sortkey=node.getAttribute("sortkey");
+   if (sortkey) return sortkey;
+  }
+  var hasInputs = (typeof node.getElementsByTagName == 'function') &&
+                 node.getElementsByTagName('input').length;
+  if (!hasInputs) {
+   var txt=node.textContent;		// modern, schließt hidden ein
+   if (!txt) txt=node.innerText;	// ohne hidden
+   if (!txt) txt=node.text;		// ??
+   if (txt) return txt.replace(/^\s+|\s+$/g,'');
+  }
+  switch (node.nodeType) {
+   case 3:
+   if (node.nodeName.toLowerCase() == 'input') {
+    return node.value.replace(/^\s+|\s+$/g, '');
+   }
+   case 4: return node.nodeValue.replace(/^\s+|\s+$/g, '');
+   case 1:
+   case 11:
+   var innerText = '';
+   for (var i = 0; i < node.childNodes.length; i++) {
+    innerText += this.getInnerText(node.childNodes[i]);
+   }
+   return innerText.replace(/^\s+|\s+$/g, '');
+  }
+  return '';
+ },
+
+ reverse: function(table) {	// reverse the rows in a table
+  var tbody=table.tBodies[0];
+  var i,j;
+  for (j=0;j<tbody.rows.length;j++) if (!this.getDirCheck(tbody.rows,j)) break;
+// 0. Verzeichnis-Zeilen tauschen, j = erste Zeile mit Datei
+  for (i=j-2; i>=0; i--)  tbody.insertBefore(tbody.rows[i],tbody.rows[j]);
+// 1. Zeilen vertauschen: Ab der vorletzten beginnend Zeile hinten anhängen
+  for (i=tbody.rows.length-2; i>=j; i--) tbody.appendChild(tbody.rows[i]);
+// 2. "sorted" gegen "reversed" in allen Tabellenspaltenköpfen tauschen
+  var h = table.headRow.cells;
+  for (i=0; i<h.length; i++) if (h[i].nodeType==1) {
+   var hc=h[i].className;
+   h[i].className = hc.search(/\bsorted\b/)!=-1
+     ? hc.replace(/\bsorted\b/,'reversed')
+     : hc.replace(/\breversed\b/,'sorted');
+  }
+ },
+/* sort functions, each sort function takes two parameters, a and b */
+ sort_int: function(a,b) {
+  a=parseInt(a); if (isNaN(a)) a=1000000;
+  b=parseInt(b); if (isNaN(b)) b=1000000;
+  return a-b;
+ },
+ sort_numeric: function(a,b) {
+  a=parseFloat(a.replace(',','.')); if (isNaN(a)) a=0;	// in Zahl umwandeln
+  b=parseFloat(b.replace(',','.')); if (isNaN(b)) b=0;
+  return a-b;
+ },
+ sort_alpha: function(a,b) {
+  if (a=="" && b!="") return 1;
+  if (a!="" && b=="") return -1;
+  return a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'});
+ },
+ sort: function(list,comp_func) {
+// A _stable_ sort function to allow multi-level sorting of data thanks to Joseph Nahmias
+// see: http://en.wikipedia.org/wiki/Cocktail_sort
+  var b=0,t=list.length-1,swap=true,i;
+  function swa() {		// local function capturing <i>, <list>, <comp_func> and <swap>
+   if (!list[i].dir && list[i+1].dir || list[i].dir===list[i+1].dir && comp_func(list[i].tag,list[i+1].tag)>0) {
+    var q=list[i];list[i]=list[i+1];list[i+1]=q;
+    swap=true;
+   }
+  }
+  while (swap) {
+   swap=false;
+   for (i=b; i<t; ++i) swa();
+   t--;				// top element now sorted
+   if (!swap) break;		// nothing swapped, i.e. all sorted
+   for (i=t; --i>=b;) swa();
+   b++;				// bottom element now sorted
+  }
+ }
+}

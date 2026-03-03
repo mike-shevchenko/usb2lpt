@@ -1,0 +1,32 @@
+1 VERSIONINFO
+ FILEVERSION I008
+ PRODUCTVERSION I009
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x0L
+ FILESUBTYPE 0x0L
+ {
+  BLOCK "StringFileInfo"
+  {
+   BLOCK S000
+   {
+    VALUE "CompanyName", "haftmann#software"
+    VALUE "FileDescription", S007
+    VALUE "FileVersion", S008
+    VALUE "LegalCopyright", S005
+    VALUE "InternalName", "usb2lpt"
+    VALUE "OriginalFilename", "usb2lpt.sys"
+    VALUE "ProductName", S006
+    VALUE "ProductVersion", S009
+   }
+  }
+  BLOCK "VarFileInfo"
+  {
+   VALUE "Translation", I000
+  }
+ }

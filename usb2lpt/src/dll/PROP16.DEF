@@ -1,0 +1,32 @@
+LIBRARY USB2LPT
+;0804 DESCRIPTION "USB2LPT  ф–‘±н–т"	;vorletztes Zeichen: ≥ћ; kann nicht von TLINK (6.0) verarbeitet werden
+;0405 DESCRIPTION "USB2LPT Poskytovatel postavenй strбnky"
+;0407 DESCRIPTION "USB2LPT Eigenschaftsseiten-Lieferant"
+;0409 DESCRIPTION "USB2LPT Property Sheet Provider"
+;040A DESCRIPTION "USB2LPT Hoja de propiedades de proveedor"
+;040C DESCRIPTION "USB2LPT Fournisseur de Feuille de propriйtй"
+;0410 DESCRIPTION "USB2LPT Proprietа Provider"
+;0411 DESCRIPTION "USB2LPT ГvГНГpГeГB•ГVБ[Гg•ГvГНГoГCГ_"
+;0419 DESCRIPTION "USB2LPT ѕоставщик листов с указанием свойств"
+;041F DESCRIPTION "USB2LPT ÷zellik sayfasэnda saрlayэcэnэza"
+EXETYPE WINDOWS
+HEAPSIZE 2048
+EXPORTS
+	WEP		@1	RESIDENTNAME
+	EnumPropPages	@2
+;	CoDeviceInstall	@3
+
+SEGMENTS
+	CODE PRELOAD
+	DATA PRELOAD SHARED
+
+IMPORTS
+	LoadLibraryEx32W	=KERNEL.513
+	FreeLibrary32W		=KERNEL.514
+	GetProcAddress32W	=KERNEL.515
+	_CallProcEx32W		=KERNEL.518
+	InitCommonControls	=COMMCTRL.17
+	PropertySheet		=COMMCTRL.159
+	CreatePropertySheetPage	=COMMCTRL.160
+	DestroyPropertySheetPage=COMMCTRL.161
+

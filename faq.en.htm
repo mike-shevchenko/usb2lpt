@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<!-- saved from url=(0042)https://heha.fwh.is/usb/USB2LPT/faq.en.htm -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="date" content="2008-01-01">
+<meta name="keywords" lang="de" content="USB, LPT, Parallel, Parallelport, Druckerport, Konverter, Adapter">
+<meta name="keywords" lang="en" content="USB, LPT, parallel, parallel port, printer port, converter, adaptor">
+<link rel="alternate" href="https://heha.fwh.is/usb/USB2LPT/faq.de.htm">
+<link rel="stylesheet" href="./faq.en_files/h.css">
+<script src="./faq.en_files/h.js.download"></script> 
+<title>Converter From USB To Parallel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><script>
+function attach() {attachSelfLinks("dt");}
+window.addEventListener("load",attach);
+</script><link rel="icon" href="https://heha.fwh.is/icons/laptop.png"><script type="text/javascript" src="./faq.en_files/sh.js.download"></script></head><body style="overflow-x: auto;"><input type="checkbox" id="linewrap"><input type="checkbox" id="linenumb"><div id="LangSel" class="noprint">&nbsp;<a class="nul" href="https://heha.fwh.is/usb/USB2LPT/faq.de.htm" title="Deutscher Originaltext">🇩🇪</a></div>
+
+
+
+<h1>Frequently Asked Questions (FAQ)</h1>
+<dl class="faq"><dt id="1">
+Why work USB to serial (RS232, COMx) converters well?
+And any commercial USB to parallel printer adapter <b>not at all</b>?
+</dt><dd>
+Most hardware attached to parallel port doesn't act like a printer,
+but is controlled by a <b>self-made protocol</b>.
+For example, not to disturb a printer behind a dongle.
+<br>There is no Windows function available to control dedicated
+pins of parallel port, therefore, the only choice for programmers
+is to <b>directly access</b> the hardware.
+<p>
+Serial ports are very well wrapped by Win32 functions,
+and it is very inconvenient for programmers to access a
+serial port directly.
+The two control lines (RTS and DTR) and the <span class="o">TxD</span> line are easily
+controllable using
+<code><a href="http://msdn.microsoft.com/en-us/library/aa363254.aspx">EscapeCommFunction()</a></code> function.
+The four status lines (CTS, DSR, DCD, RI) and the <span class="o">RxD</span> line can be queried by
+<code><a href="http://msdn.microsoft.com/en-us/library/aa363258.aspx">GetCommModemStatus()</a></code> function.
+This applies to old 16-bit Windows programs too — the Win16 API is similar.
+</p><p>
+Some programs are very slow when working with USB to serial
+converters. For example, simple PIC programmers.
+
+</p><p></p><hr color="#008000"></dd><dt id="2">
+How fast is this USB2LPT for my application?
+</dt><dd>
+It depends highly to USB frame rate, which itself depends on USB bus speed.
+<small>But USB 3.0 does <i>not</i> increase frame rate to USB 2.0!</small><ul>
+ <li>USB High-Speed: 256000 OUT and 8000&nbsp;IN instructions per second
+ </li><li>USB Low-Speed (upto XP), Full-Speed: 4000 OUT and 1000&nbsp;IN instructions
+  per second
+ </li><li>USB Low-Speed (Vista and newer) 500 OUT and 125&nbsp;IN instructions
+  per second
+</li></ul><p>
+How many bits per second are transferred using bit-banging depends heavily
+on your application. For following calculations, I assume USB high-speed.</p><p>
+
+The obvious limit is 8 kBit/s for read access (e.g. flash verify).
+Practically, the limit is roughly the half by Windows's driver design.
+If write access is written with USB2LPT or any other redirection in mind, it's still much faster.
+However, most apps check each clock and data bit they write, so the speed drops
+by factor 4 (even for write-only access), so we reach 1 kBit/s.
+<br>
+Even worse for JTAG because there are two data-out lines that are often checked
+independently. So it drops to 600 bit/s.
+<br>
+Often, software re-reads every written byte, to be extra sure, this halfs the data rate again.
+Therefore, expect no more than 0,5 .. 1 kBit/s transfer rates.
+</p><p>
+For example: <code>avrdude</code> (a popular command-line-driven Atmel AVR programmer software)
+needs 18 seconds to read an ATmega16 via parallel port. That is 7 kBit/s. Not very fast, but sufficient.
+With USB2LPT, it needs 6 minutes, that is 0,5 kBit/s.
+A good AVR project for those (larger) controllers have a bootloader,
+which is much faster and more convenient than programming via parallel port,
+so you often need USB2LPT only for “doping” the typical 1 KByte bootloader
+(which takes affordable 20 seconds via USB2LPT),
+or for some troubleshooting (and — in case of AVR — setting fuses).
+</p><p>
+Specialized software aware to USB2LPT (i.e. that uses the <a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm">USB2LPT API</a>)
+can be much faster, up to roughly 20 MByte/s, by replacing parts of the
+firmware in controller's RAM on-the-fly.
+
+</p><p></p><hr color="#008000">
+</dd><dt id="3">Can I use the USB2LPT.SYS driver with a regular (cheap)
+USB to parallel printer adapter?
+</dt><dd>
+Of course <b>not</b>! It's never possible due to design limitations of such adapters. See below.
+
+<p></p><hr color="#008000">
+</dd><dt id="4">Does USB2LPT work with Windows Vista / 7 / 8?
+</dt><dd>
+Yes. (Applies to 32 and 64 bit versions.)<br>
+Limitations for instant help may occur.
+You should install the .rtf-based .hlp file package from Microsoft:<ul>
+<li><a href="http://www.microsoft.com/en-us/download/details.aspx?id=5143">Windows Help program (WinHlp32.exe) for Windows Vista</a>
+</li><li><a href="http://www.microsoft.com/en-us/download/details.aspx?id=91">Windows Help program (WinHlp32.exe) for Windows 7</a>
+</li><li><a href="http://www.microsoft.com/en-us/download/details.aspx?id=35449">Windows Help program (WinHlp32.exe) for Windows 8</a>
+</li></ul>
+
+
+<p></p><hr color="#008000">
+</dd><dt id="5">Does USB2LPT work with multi-core architectures?
+</dt><dd>
+Yes. There may be blue-screen bugs, but most of them are removed November 2009,
+so don't forget to update the driver before reporting bugs.
+
+<p></p><hr color="#008000">
+</dd><dt id="6">Does USB2LPT work with X64 (AMD64) versions of any Windows?
+</dt><dd>
+Yes but you might have another 64-bit related issues.<p>
+
+While there is a 64 bit driver available,
+it does not feature the debug register redirection.
+Furthermore, the well-worked READ/WRITE_PORT_UCHAR redirection cannot work.
+There are simply no kernel functions to trap.
+However, the property sheet and the <a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm">API</a> is fully functional,
+so you can access the port pins with specialized software, e.g.
+<a href="https://heha.fwh.is/usb/USB2LPT/root/hs/inpout32-hs.zip/Release/inpout32.dll">my special build of inpout32.dll</a>.
+<!--
+To install and use this driver, you must disable Driver Verification Enforcement at every startup.
+The procedure is:<ul>
+<li>Windows XP: There is no driver verification enforcement, nothing to do
+<li>Windows Vista, Windows 7: Press F8 key on startup, then select “Boot with disabled Driver Verification Enforcement”
+<li>Windows 8: Once booted, go to “Enhanced start option”, then select “Disable Driver Verification Enforcement” and reboot
+</ul>
+-->
+</p><p></p><hr color="#008000">
+</dd><dt id="Dongle">What about parallel port software protection keys
+ (hardlocks, dongles)?
+</dt><dd>
+This kind of devices don't work with USB2LPT.
+The only chance to get them to work is running a virtual machine (VMware or similar)
+and rewrite USB2LPT.SYS to a virtual machine driver.
+<p>
+You <i>may</i> have luck especially for some older software (last update before 1995),
+you can check whether you can record IN &amp; OUT instructions with this
+<a href="https://heha.fwh.is/usb/USB2LPT/root/hs/dknack_.exe">Dongle Emulator</a>.
+Note that this program runs on Windows 3.1, 3.11, 95, 98, Me and 2000,
+but <i>not</i> on XP and newer (it <i>seems</i> to work but it doesn't record anything),
+whereas USB2LPT works on newer systems too.
+
+</p><p></p><hr color="#008000">
+</dd><dt id="DIY" style=""><b>I like programming, or I have the source code</b>,
+ and I want to control some hardware
+(e.g. camera shutter, telescope positioner, LC display)
+ with some output lines.
+ Seems that USB2LPT is the perfect solution?
+</dt><dd><img align="right" src="./faq.en_files/seriell.png">
+No, USB2LPT is <i>not</i> perfect, however, suitable. The disadvantages are:<ul>
+<li>relatively unstable operation due to hardcore driver programming
+</li><li>currently not portable to non-Windows systems
+</li><li>driver installation necessary on target systems (it's annoying to most users)
+</li><li>USB2LPT is not in mass production, it's hand-made in low counts
+</li></ul>
+<p>
+For <b>up to 3 output lines</b> (and up to 5 input lines) it's quite perfect to use a
+<i>serial</i> port.
+USB→Serial adapters like <a href="http://www.reichelt.de/?ARTICLE=58641">this</a>
+work seamlessly and — in many cases — fast enough.
+But note that mostly you have convert output voltages to TTL levels;
+<a href="./faq.en_files/seriell.png">for example with zener diodes 3.9&nbsp;V</a>.
+The maximum data rate via USB is 1000 level transitions per second.
+</p><p clear="right">
+For <b>up to 8 output lines and 3 input lines</b>,
+I recommend using a regular and cheap USB→Printer adapter, like
+<a href="http://www.reichelt.de/?ARTICLE=56781">this</a> or 
+<a href="http://www.reichelt.de/?ARTICLE=42388">this</a>.
+However, the 5&nbsp;V USB supply voltage is not available.
+The connection requires some circuitry.
+Read  <a href="https://heha.fwh.is/usb/Programmierger%C3%A4te/UsbPrn-Adapter">this detailed article</a>
+for possible solutions.
+The maximum data rate is about 100000 level transitions per second
+(even at multiple lines the same time, that's reasonably fast!),
+so it's perfect for controlling LEDs
+– or alphanumeric LC display controllers in nibble mode
+– or pixel graphics LC display controllers in serial mode or using a port expander.
+Many devices don't need inputs, e.g. stepper motors, serial D/A converters,
+or <a href="https://heha.fwh.is/usb/USB2LPT/root/hs/AD9834.zip/">DDS frequency generators</a> often used in ham radio applications.
+<br>
+The status lines <span class="o">ERR</span> ⑮, ONL ⑬, and PE ⑫ can be read using
+<code><a href="http://msdn.microsoft.com/en-us/library/aa363216.aspx">DeviceIoControl</a>(…,<a href="http://msdn.microsoft.com/en-us/library/ff551809.aspx" title="Documentation bug! lpOutBuffer points to one byte which bits 3,4,5 receive line states">IOCTL_USBPRINT_GET_LPT_STATUS</a>,…)</code>
+with 1 kByte/s maximum speed.
+The <span class="o">INIT</span> <small>(16)</small> line can only be controlled to output a LOW spike of some µs, nothing else, using
+<code>DeviceIoControl(…,<a href="http://msdn.microsoft.com/en-us/library/ff551810.aspx" title="Doesn&#39;t work with Windows 2000!">IOCTL_USBPRINT_SOFT_RESET</a>,…)</code>.
+The remaining control and status lines <span class="o">STB</span> ①,
+<span class="o">AF</span> ⑭, <span class="o">SEL</span> <small>(17)</small>, <span class="o">ACK</span> ⑩, and BUSY ⑪
+are definitively <i>not</i> useable!
+<br>
+You get a handle to the USB→Printer adapter using
+<a href="https://heha.fwh.is/usb/USB2LPT/root/hs/DLO_UsbPrn.zip/src/DLO_UsbPrn.c?auto=C#OpenUsbPort">this weird Win32-API code</a>.
+It's much easier for Linux, simply open <code>/dev/usb/lp<i>n</i></code>.
+</p><p>
+<b>Unlimited output lines</b> can be achieved using port expander circuits like 74HCT595,
+either attached to any parallel or serial port solution stated above.
+</p><p>
+For <b>output <i>and</i> input lines <i>and</i> USB power</b>
+(<i>and</i> built-in “brain”) you should use HID-based solutions like
+<a href="http://www.ulrichradig.de/home/index.php/avr/usb-relaiskarte">this</a>
+or <a href="http://www.obdev.at/products/vusb/powerswitch.html">this</a>
+or <a href="http://hobbyelektronik.org/w/index.php?title=USBLotIO">this</a>.
+</p><p>
+For <b>up to 2 (possibly also 6) output lines</b> with <b style="color:darkblue">precise timing control in microseconds</b>
+pick your  … sound card!!
+You have to solve DC clamping and amplification yourself,
+use operational amplifiers, comparators, possibly diodes and analog switches for this.
+The Win32 workhorse function for waveform output is
+<a href="http://msdn.microsoft.com/en-us/library/ms713764.aspx"><code>waveOutWrite()</code></a>.
+
+</p><p></p><hr color="#008000">
+</dd><dt id="CNC">For CNC tool machines: Does USB2LPT support high step rates
+for stepper motors?
+</dt><dd>
+This problem requires deeper insight and explanation<ul>
+<li>For stepper drives, especially for tool machines, I disencourage systems
+that use a parallel port to put DIR and STEP instructions to the motors.
+Because <b>microstepping</b> is state-of-the-art since 20 years.
+In the microstepping world, you think in <i>coil currents</i>,
+<i>phase angles</i> or 
+<i><a href="http://en.wikipedia.org/wiki/Bresenham&#39;s_line_algorithm">Bresenham's</a>
+microstep widths at constant rate</i> instead of in steps.
+Refer to the <i>modern</i> <a href="http://www.trinamic.com/">Trinamic</a> motor controller
+<a href="http://www.trinamic.com/tmc/render.php?sess_pid=292">TMC249</a>!
+</li><li>Motor controllers that except step frequencies above 10&nbsp;kHz are generally
+<i>microstep controllers</i> that convert the steps in coil currents.
+Therefore, generating high step frequencies is a “detour” in terms of information technology.
+</li><li>For transferring <i>microstep widths</i> with constant sampling rate
+(e.g. 10&nbsp;kHz) via USB, there is luckily a USB class, the
+<a href="http://www.usb.org/developers/devclass_docs">Audio Device Class</a>,
+that matches this application very well.
+Using this standard USB class imposes superior advantages for future CNC tool machines:<ul>
+<li>One 8-bit “audio” channel per motor transferring the microsteps to do, very compact, easy and comprehensible operation
+<small><br>In opposite to audio-PCM, where positions (of speaker membrane) are transferred,
+speed values (= differentials of positions) are transferred here.
+For 8-bit data channels I suggest using signed char values of –64 (full step back)
+to +64 (full step forward) —
+accidental audio data is 80h centered and will render as invalid data automatically.</small>
+</li><li>Cheaper and widely available USB full-speed controllers are fully sufficient
+</li><li>Good balancing of computational work between PC and USB device
+</li><li>Buffering of data stream handled by built-in audio subsystem, no “interrupt frequency” of PC software necessary
+</li><li>No specialized USB kernel-mode driver necessary, runs with 32 and 64 bit versions of Windows, Linux, and MacOS
+</li><li>Low overhead of USB sound driver using isochronous transfers, low latency when using DirectSound
+</li><li>Zero phase difference between multiple channels
+</li><li>“Back Channel” (i.e. Audio Input) for motor/endswitch error/status or encoder data reporting easily available
+</li><li>Full free-form numeric-controlled trajectories (more than G-code with its
+lines and arcs, like splines, evolventes, evolutes, etc.),
+simply recordable in well-known and reasonably compact <a href="http://en.wikipedia.org/wiki/WAV">.WAV files</a>
+</li><li>CNC machine is testable with any .WAV file player and such .WAV files
+(if player supports the required channel count)
+</li><li>Very suitable for parallel kinematics (e.g. <a href="http://en.wikipedia.org/wiki/Stewart_platform">hexapods</a>),
+the controller may transform linear axes to motor axes if NC software doesn't supports this
+</li><li>Automatic sleep mode with reduced power consumption of CNC machine
+while <i>not</i> streaming “audio” data
+</li></ul>
+</li></ul>
+With this overwhelming advantages in mind, someone has to write a plugin for well-known
+ <a href="http://www.machsupport.com/">MACH3</a> CNC software …
+<p>
+For the USB Microcontroller, IMHO, ARM7 based controllers are best suited, like
+<a href="http://www.nxp.com/">NXP (former Philips)</a>
+<a href="http://ics.nxp.com/products/lpc2000/lpc214x/">LPC214x</a>
+or <a href="http://www.atmel.com/">Atmel</a>
+<a href="http://www.atmel.com/dyn/products/product_card_v2.asp?part_id=3521">AT91SAM7S</a>
+or
+<a href="http://www.atmel.com/dyn/products/product_card_v2.asp?PN=AT32UC3B064">AT32UC3B64</a> too.
+<br>The brand-new <a href="http://focus.ti.com/docs/prod/folders/print/msp430f5529.html">MSP430F55xx</a>
+by <a href="http://www.ti.com/">Texas Instruments</a>
+are <i>not</i> suited due to missing isochronous USB Pipes.
+<br><i style="color:gray">I will pick up this problem when I gather a CNC tool machine.</i>
+</p><p></p></dd><dd>
+The <i>theoretical</i> maximum step frequency for USB2LPT (High Speed) is 4&nbsp;kHz.
+The practical limit is 1&nbsp;kHz.
+<p></p></dd><dd>
+For <a href="http://www.machsupport.com/">MACH3</a> there are specialized USB cards readily available — e.g.
+<a href="http://www.warp9td.com/">SmoothStepper</a> — for high velocities.
+It's wise to use these solutions, the higher price is not for profit only.
+As stated above, such cards are informational nonsense because
+the downstream microstep controller converts the fast stepper pulses
+into slower coil current values.
+
+<p></p><hr color="#008000">
+</dd><dt id="LCD"><img align="right" src="./faq.en_files/USB2LPT+LCD.jpg">
+For controlling
+<a href="http://en.wikipedia.org/wiki/LCD" title="Liquid Crystal Display">LCD</a>,
+someone recommends USB2LPT. Is this OK?
+</dt><dd>
+Generally, USB2LPT is suitable for LCD.
+Mostly you want to control a HD44780 compatible display <i>controller</i>.<ul>
+<li>Low-Speed (Version 1.6) is sufficient for text-only LCD
+<small>(See picture; for monitoring line levels,
+<img src="./faq.en_files/de.png" alt="" title="German only" align="top">
+<a href="https://heha.fwh.is/usb/LptChk/">LPT Checker</a> is used here)</small>
+</li><li>For raster-graphics LCD, the speed advantage of USB2LPT High-Speed (1.7) is very noticeable
+</li><li>An extra advantage is the availability of 5&nbsp;V at Pin 25&nbsp;of D-Sub connector
+</li></ul>
+For
+<img src="./faq.en_files/de.png" alt="" title="German only" align="top">
+<a href="http://www.mikrocontroller.net/topic/25099#186569" title="LCD-Controller für 640x480 LCD mit ATmega8515">controllerless displays</a>,
+USB2LPT is <i>not</i> suited!
+<br><br>
+However, there are some issues to point to before deciding to use USB2LPT:<ul>
+<li>For LED and LCD (Seven-Segment, 14-Segment, Dot Matrix and raster-graphics)
+    there is a <b>Usage Page</b> of the well-known USB HID device class!
+    See <a href="http://www.usb.org/developers/devclass_docs/Hut1_12.pdf">HID Usage Tables 1.12</a>,
+    from page 109 „18 Alphanumeric Display Page (0x14)“ downwards.
+    <b><i>This specification exists to be used.
+    Not to re-invent the wheel over and over again.</i></b>
+</li><li>Well-made control software can enumerate number, size and capabilities
+    of all such displays in a system. True <b>PnP</b> at its best.
+</li><li>A <a href="https://heha.fwh.is/usb/USB2LPT/root/mb-iwp/Anzeige%20mit%20VQC10/">reference implementation</a>
+    ist currently under construction.
+    To make USB2LPT useless (really!).
+    On the other hand, to make communication to raster-graphics displays pretty fast,
+    <i>even</i> using USB Low-Speed and <a href="http://www.obdev.at/products/vusb/index-de.html">V-USB</a>.
+</li><li><b><i>However</i></b> I don't know suitable PnP-capable control software.
+    There are so many “unemployed” programmers around, can someone else improve
+    the dozens of those programs (LCDhype, LCDinfo etc.)?
+</li></ul>
+<br>
+Hobbyists who are fraud programming microcontrollers should give
+<a href="https://heha.fwh.is/usb/USB2LPT/faq.en.htm#DIY" class="lb" title="see above">USB→Printer adapters</a> (see above) a try.
+Advantages:<ul>
+<li>No speed problem
+</li><li>No acquisition problem (of those adapters)
+</li><li>Easily comprehensive schematic with SSI (gates) and MSI (flip-flops) only
+<small><br>It's a good idea to route <b>E</b>nable through an inverter gate
+from <b class="o">STB</b>!
+This should avoid the need for the flip-flops (74HCT574) as
+<a href="https://heha.fwh.is/usb/USB2LPT/root/hs/DLO_UsbPrn.zip/DLO_UsbPrn.png?bin=PNG">line-level catchers</a>.
+For some display controllers, even the inverter is not necessary.</small>
+</li></ul>
+<i>Disadvantage:</i> The need to write a suitable PC-side software
+in Windows or Linux — until there grows a quasi-standard for hobbyists
+using those adapters.
+<p>
+Note by JGrosJean at ieee.org: “My low speed USB2LPT works
+in WinXP running on a virtual machine using Oracle VirtualBox in Linux.”
+
+
+</p><p></p><hr color="#008000">
+</dd><dt id="PL2305">Would it be more convenient to use existing converters
+ and use its built-in
+<a href="http://www.prolific.com.tw/eng/Products.asp?ID=6">Prolific PL-2305</a>
+instead?</dt>
+<figure>
+<img src="./faq.en_files/pl-2305.jpg" alt="Photo of any USB to parallel converter">
+<figcaption>A usual parallel adapter (<b>NOT</b> my PCB!)</figcaption>
+</figure>
+<dd>
+Those converters emulate
+<a href="http://www.usb.org/developers/devclass_docs/usbprint11.pdf">USB printers</a>
+according to
+<a href="http://www.usb.org/developers/defined_class">USB device class code 7</a>.
+The protocol used in printer class USB devices doesn't allow to set some
+printer port pins; that protocol doesn't know a parallel port at all.
+For compatibility reasons, »Paper End«, »Select«, and »Error« port statii
+may be requested, that's all.
+You can use such a device only and only if your external device is capable
+of EPP transfer, <i>and</i> you have to adapt your software.
+Most external devices need direct pin control.
+
+<p></p><hr color="#008000">
+</dd><dt id="PL2305x">Is there a chance to reprogram the PL-2305 chip?
+</dt><dd>
+Surely not. Those chips are mask-programmed, or maybe OTP
+(one-time programmable PROM).<br>
+Maybe there is a backdoor (undocumented features to access the pins
+directly), but that's hard to find out, if any available.
+<p>
+</p><blockquote>
+The PL-2305 <i>has</i> a backdoor.
+Its descriptor is as follows:<ul>
+<li>Device (string descriptors can be defined in EEPROM), Class »Multifunction«<ul>
+<li>Configuration Nr. 1<ul>
+<li>Interface Nr. 0<ul>
+<li>Alternate Setting Nr. 0
+<br>Class: 07/01 = Drucker, Protocol: 01 = one direction<ul>
+<li>Endpoint Nr. 2, Bulk, Output, 64 Bytes</li></ul>
+</li><li>Alternate Setting Nr. 1
+<br>Class: 07/01 = Drucker, Protocol: 02 = two directions<ul>
+<li>Endpoint Nr. 1, Bulk, Output, 64 Bytes
+</li><li>Endpoint Nr. 2, Bulk, Input, 64 Bytes</li></ul>
+</li><li><b>Alternate Setting Nr. 2
+<br>Class: FF/00 = gusto, Protocol: FF = gusto</b><ul><b>
+<li>Endpoint Nr. 1, Bulk, Output, 64 Bytes
+</li><li>Endpoint Nr. 2, Bulk, Input, 64 Bytes
+</li></b><li><b>Endpoint Nr. 3, Interrupt, 4 Bytes, Interval: 1&nbsp;ms</b></li></ul>
+</li></ul></li></ul></li></ul></li></ul>
+The »Alternate Setting Nr. 2« had no function.
+Probably, this is a IEEE 1284.4 protocol stub.
+</blockquote>
+
+<p></p><hr color="#008000">
+</dd><dt id="13">May it's possible to speed up the emulated IN instructions?
+(Even without changing software?)
+</dt><dd>
+If you are a great programmer, you may write an “on the fly disassembler”
+for the code following the IN instruction and look where the IN byte
+(AL register) is spread. After you get the true IN byte, you patch all
+locations where the IN byte is spreaded.
+Unluckily, most IN instructions are followed by a conditional jump,
+so you have to predict the condition... forget it!<br>
+On the other hand, it's easy to speed up REP INSB instructions.
+But these are seldom used in conjunction with ECP/EPP ports.
+With a standard parallel port, REP INSB is completely useless and
+therefore never used.
+
+<p></p><hr color="#008000">
+</dd><dt id="14">
+May it's possible to speed up changing the accessing software?
+</dt><dd>
+Yes, of course. You can concatenate IN instructions to two USB packets.
+You send data blocks, according to the documentation in this
+<a href="https://heha.fwh.is/usb/USB2LPT/usb2lptf.zip/USB2LPT.A51?auto=ASM">source code</a>,
+to the converter, and get the answers in a multi-byte IN block.<br>
+Each instruction consumes about 1&nbsp;µs. Delayed operation can be achieved
+using WAIT instructions (20h, thereafter the delay time in units of 4&nbsp;µs)
+in the OUT packet. Slower delays you should achieve in software.<br>
+<p>
+</p><blockquote>
+This converter (until Revision 1.1) has the following descriptor:<ul>
+<li>Device "USB2LPT Converter", Class »Multifunction«<ul>
+<li>Configuration Nr. 1<ul>
+<li>Interface Nr. 0<ul>
+<li>Alternate Setting Nr. 0
+<br>Class: FF/FF = gusto, Protocol: FF = gusto<ul>
+<li>Endpoint Nr. 2, Bulk, Output, 64 Bytes
+</li><li>Endpoint Nr. 2, Bulk, Input, 64 Bytes</li></ul></li></ul>
+</li><li>Interface Nr. 1<ul>
+<li>Alternate Setting Nr. 0
+<br>Class: 07/01 = Printer, Protocol: 01 = one direction<ul>
+<li>Endpoint Nr. 4, Bulk, Output, 64 Bytes</li></ul>
+</li><li>Alternate Setting Nr. 1
+<br>Class: 07/01 = Printer, Protocol: 02 = two directions<ul>
+<li>Endpoint Nr. 4, Bulk, Output, 64 Bytes
+</li><li>Endpoint Nr. 4, Bulk, Input, 64 Bytes</li></ul>
+</li></ul></li></ul></li></ul></li></ul>
+Such a two-interface device forms two devices.
+For this, Windows loads a “fork” driver, that itself loads two real drivers.
+</blockquote>
+<p>
+For more exact timing I advise you to “roll your own” and write
+your own 8051 program. You can download it anytime to the converter.
+[This converter is actually almost the same as an EZ-USB development board!]
+
+</p><p></p><hr color="#008000">
+</dd><dt id="15">
+For mass installation I want other default settings than those built-in into
+the USB2LPT.SYS file. How to do that? (Michael Ashman @ instron)
+</dt><dd>
+Modify the <code>usb2lpt.inf</code> file to include the following sections:
+<blockquote><input type="checkbox" id="lineno"><label for="lineno">Show line numbers</label><input type="checkbox" id="lnwrap"><label for="lnwrap">Wrap lines</label><pre class="ini"><line id="l1"><b>[Dev.ntx86.HW]</b>
+</line><line id="l2">AddReg = usercfg_addreg
+</line><line id="l3">
+</line><line id="l4"><b>[usercfg_addreg]</b>
+</line><line id="l5">HKR,,UserCfg,1,78,02,c8,00,06,03
+</line></pre></blockquote>
+This example sets the base address to 278h, timeout to 200&nbsp;ms, and mode = ECP + EPP.
+<br><br>
+The number <b>1</b> after <b>UserCfg</b> declares following data as hex-binary.
+The data structure for these bytes has the following content
+(see source file <code>usb2lpt.h</code>):
+<blockquote><pre class="c"><line id="l6"><b>struct</b> USERCFG {
+</line><line id="l7"> USHORT LptBase; <i>// trapped base address (EPP = base address + 4, ECP = base address + 0x400)</i>
+</line><line id="l8"> USHORT TimeOut; <i>// timeout value for write-back cache (both little-endian values)</i>
+</line><line id="l9"> UCHAR flags;	 <i>// OR-ed values of the following bits</i>
+</line><line id="l10"><d>#define UC_Debugreg	<n>0x01</n>	<i>// Use debug register trap (one of four debug registers for every address range)</i>
+</d></line><line id="l11"><d>#define UC_Function	<n>0x02</n>	<i>// Redirect kernel-mode access routines (READ_PORT_UCHAR etc.)</i>
+</d></line><line id="l12"><d>#define UC_WriteCache	<n>0x04</n>	<i>// Enable write-back cache</i>
+</d></line><line id="l13"><d>#define UC_ReadCache0	<n>0x08</n>	<i>// Enable read-ahead for base address+0</i>
+</d></line><line id="l14"><d>#define UC_ReadCache2	<n>0x10</n>	<i>// Enable read-ahead for base address+2</i>
+</d></line><line id="l15"><d>#define UC_ReadCacheN	<n>0x20</n>	<i>// Enable read-ahead for other registers (without effect)</i>
+</d></line><line id="l16"><d>#define UC_ForceRes	<n>0x40</n>	<i>// unused</i>
+</d></line><line id="l17"><d>#define UC_ForceDebReg	<n>0x80</n>	<i>// Force debug register usage even if used previously (Win98 problem)</i>
+</d></line><line id="l18"> UCHAR Mode;	 <i>// enum SPP,EPP,ECP,EPP+ECP</i>
+</line><line id="l19">};
+</line></pre></blockquote>
+
+<p></p><hr color="#008000">
+</dd><dt id="16">What about a version with a male SubD connector?
+</dt><dd>
+It's <i>not</i> possible to simply populate a male instead of the female
+SubD connector to the same PCB!
+This would lead to pin swappings like 1↔13, 2↔12 etc.
+<br>
+A complete PCB redesign would be necessary:
+Not worth at all while cheap “gender changers” are available.
+
+<p></p><hr color="#008000">
+</dd><dt id="17">What about a version with a 36-pin Centronics connector?
+</dt><dd>
+A complete PCB redesign would be necessary:
+Not worth at all, use an ordinary printer cable.
+
+<p></p><hr color="#008000">
+</dd><dt id="18">Someone asks me if he can install two USB2LPT devices in one PC.
+I would guess not, since there is only one set of debug registers in a PC.
+</dt><dd>
+The instant help of USB2LPT's property sheet pages will answer this.
+<p>
+Every <a href="http://en.wikipedia.org/wiki/IA-32">i86</a> and
+<a href="http://en.wikipedia.org/wiki/X86-64">AMD64</a>
+compatible processor has <b>four</b> debug register sets.
+In case of SMP machines, this number remains the same
+because <i>all</i> processors must be programmed to halt on the
+ <i>same</i> breakpoints (to be <i>symmetrically</i>).
+Indeed, the driver contains instructions to run specific code
+ on one specific processor,
+that is scheduled in a small loop for all processors
+while the “main” (the calling) processor waits for completion of the others.
+It was somehow tricky but it works.
+There is no Windows Kernel API for doing this, but some API for helping:
+A <a href="http://msdn.microsoft.com/en-us/library/ff552185.aspx">deferred procedure call (DPC)</a> with a
+<a href="http://msdn.microsoft.com/en-us/library/ff553278.aspx">hint to run on a specific processor</a>.
+The current code doesn't support hot-swapping of processors,
+I have no machine to test this:-)
+</p><p>
+The USB2LPT.SYS driver consumes 1..3 debug register sets
+for each USB2LPT device, depending on emulation mode.
+For <a href="http://www.beyondlogic.org/spp/parallel.htm">SPP</a> mode
+(which is by far most-often sufficient),
+the minimum of 1 set covers all the 3 adjanced addresses,
+e.g. <code>0x378..0x37A</code>.
+(To be true, it will cover 4 addresses,
+but the driver silently ignores the fourth address e.g. <code>0x37B</code>.)
+</p><p>
+So, when using SPP only, <b>four</b> USB2LPT devices can be connected to one PC
+with hardware virtualization using debug register trapping method.
+</p><p>
+The driver itself currently limits devices to nine (not to have LPT10 or more).
+But the fifth device will not acquire debug register trap virtualization.
+The other type of virtualization, <code>READ/WRITE_PORT_UCHAR/USHORT/ULONG</code>,
+will be in effect for unlimited USB2LPT devices,
+so if you know your different accessing software a bit,
+you can assign redirection method to specific addresses and hence to specific applications.
+For Windows 9x/Me, this applies to the IOPM trap too.
+For AMD64 versions, unluckily, no <code>READ/WRITE_PORT_UCHAR/USHORT/ULONG</code> API exists,
+so only the debug register trap can ever work, but that's still hard to implement.
+Because there is driver certification enforcement in effect,
+there is only a handful of drivers available accessing port addresses.
+The well-known <a href="https://heha.fwh.is/usb/USB2LPT/root/hs/inpout32-hs.zip/">INPOUT32.DLL</a>
+(or INPOUTX64.DLL) contains such certified drivers.
+The DLL code silently installs and loads (and unloads) that driver
+when the DLL is loaded or unloaded.
+So it's easy to make a replacement INPOUT32.DLL that “speaks” to USB2LPT device
+through its native interface, not needing any quirks like debug register trap.
+
+</p><p></p><hr color="#008000">
+</dd><dt id="19">Are enough devices available?
+</dt><dd>
+High-Speed: No, sold out. Low-Speed: Yes.
+
+</dd></dl>
+
+
+<div id="give-freely-root-bcjindcccaagfpapjjmafapmmgkkhgoa" class="give-freely-root" data-extension-id="bcjindcccaagfpapjjmafapmmgkkhgoa" data-extension-name="JSON Formatter" style="display: block;"><template shadowrootmode="open"></template></div><footer><nav title="Navigation" class="slidein"><a href="https://heha.fwh.is/USB2LPT">Directory above (USB2LPT)</a></nav><hr><address><p id="date"><a href="https://heha.fwh.is/usb/USB2LPT/email?Converter%20From%20USB%20To%20Parallel">Henrik Haftmann</a>, created: <time datetime="2008-01-01">January 1. 2008</time> — last modified: <time datetime="2018-03-15">March 15. 2018</time><a class="suppress_before" href="https://de.wikipedia.org/wiki/Creative_Commons"><img src="./faq.en_files/CC_BY_icon.svg" align="right" title="gemeinfrei bei Namensnennung"></a>
+</p></address></footer></body></html>

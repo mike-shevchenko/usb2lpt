@@ -1,0 +1,145 @@
+[Version]
+Signature="$Chicago$"
+Class=Ports
+ClassGuid={4d36e978-e325-11ce-bfc1-08002be10318}
+Provider=%h#s%
+CatalogFile=usb2lpt.cat	;Signierung ist vorgesehen
+DriverVer=$VER_INF$	;10/13/2009,1.0.2009.1013
+
+[Manufacturer]
+%h#s%=haftmann#software			;Windows 98/Me,2K @
+%h#s%=haftmann#software,ntx86,ntamd64	;ab Windows XP
+
+[haftmann#software]				; @
+%DevDesc%=Dev,USB\VID_16C0&PID_06B3&MI_00	;alt @
+%DevDesc%=Dev,USB\VID_16C0&PID_06B4&MI_00	;native+HID (1.6) @
+%DevDesc%=Dev,USB\VID_16C0&PID_06B5		;native (1.5) @
+%DevDesc%=Dev,USB\VID_16C0&PID_06B6&MI_00	;native+HID+PRN (alles andere) @
+;Voti/Siphec/h#s/usb2lpt
+						; @
+[haftmann#software.ntx86]
+%DevDesc%=Dev.ntx86,USB\VID_16C0&PID_06B3&MI_00
+%DevDesc%=Dev.ntx86,USB\VID_16C0&PID_06B4&MI_00
+%DevDesc%=Dev.ntx86,USB\VID_16C0&PID_06B5
+%DevDesc%=Dev.ntx86,USB\VID_16C0&PID_06B6&MI_00
+
+[haftmann#software.ntamd64]
+%DevDesc%=Dev.ntamd64,USB\VID_16C0&PID_06B3&MI_00
+%DevDesc%=Dev.ntamd64,USB\VID_16C0&PID_06B4&MI_00
+%DevDesc%=Dev.ntamd64,USB\VID_16C0&PID_06B5
+%DevDesc%=Dev.ntamd64,USB\VID_16C0&PID_06B6&MI_00
+
+;[PreCopySection]
+;HKR,,NoSetupUI,,1
+;
+[SourceDisksNames]
+1=%InstDisk%,,
+;Ohne diese beiden Kommas geht es unter Win98 nicht, verdammt!
+
+[SourceDisksFiles]
+usb2lpt.inf=1
+usb2lpt.sys=1		; @
+usb2lpt.ntx86.sys=1
+usb2lpt.ntamd64.sys=1
+usb2lpt.dll=1		; @
+usb2lpt.ntx86.dll=1
+usb2lpt.ntamd64.dll=1
+$HELPSRC$=1
+
+[DestinationDirs]
+Sys=10,System32\Drivers	;10=%windir% @
+Sys.ntx86=12		;%windir%\System32\drivers
+Sys.ntamd64=12
+Dll=11			;%windir%\System @
+Dll.ntx86=11		;%windir%\System32
+Dll.ntamd64=11
+Inf=17			;%windir%\Inf --> OEMxx.inf
+Hlp=18			;%windir%\Help
+Gid=18
+
+[Dev]				; @
+CopyFiles=Inf, Sys, Dll, Hlp	; @
+AddReg=AddReg			; @
+				; @
+[Dev.ntx86]
+CopyFiles=Sys.ntx86, Dll.ntx86, Hlp
+CopyINF=usb2lpt.inf
+AddReg=AddReg.NT
+
+[Dev.ntamd64]
+CopyFiles=Sys.ntamd64, Dll.ntamd64, Hlp
+CopyINF=usb2lpt.inf
+AddReg=AddReg.NT
+
+[Dev.ntx86.Services]
+Addservice=usb2lpt,2,AddService
+
+[Dev.ntamd64.Services]
+Addservice=usb2lpt,2,AddService
+
+[AddService]
+DisplayName    = %SvcDesc%
+ServiceType    = 1	;Kernel-Treiber
+StartType      = 3	;Start bei Bedarf
+ErrorControl   = 1	;Normale Fehlermeldung
+ServiceBinary  = %12%\usb2lpt.sys
+
+[AddReg]				; @
+HKR,,DevLoader,,*ntkern			; @
+HKR,,NTMPDriver,,usb2lpt.sys		; @
+HKR,,PortSubClass,1,0			; @
+HKR,,EnumPropPages,,usb2lpt.dll		;zwei zusätzliche Eigenschaftsseiten @
+
+[AddReg.NT]
+HKR,,PortSubClass,1,0	;als LPTx vom ClassInstaller aufzählen lassen!
+HKR,,EnumPropPages32,,usb2lpt.dll
+;EnumPropPages() erzeugt vier zusätzliche Eigenschaftsseiten
+HKR,,CoInstallers32,0x10000,usb2lpt.dll
+;CoDeviceInstall() verarbeitet DIF_NEWDEVICEWIZARD_FINISHINSTALL
+
+[Inf]
+usb2lpt.inf
+
+[Sys]					; @
+usb2lpt.sys				; @
+					; @
+[Sys.ntx86]
+usb2lpt.sys,usb2lpt.ntx86.sys
+
+[Sys.ntamd64]
+usb2lpt.sys,usb2lpt.ntamd64.sys
+
+[Dll]					; @
+usb2lpt.dll				; @
+					; @
+[Dll.ntx86]
+usb2lpt.dll,usb2lpt.ntx86.dll
+
+[Dll.ntamd64]
+usb2lpt.dll,usb2lpt.ntamd64.dll
+
+[Hlp]
+usb2lpt.hlp$COMMA_HELPSRC$
+
+[Gid]
+usb2lpt.gid
+
+[DefaultInstall]			; @
+CopyFiles=Inf, Sys, Dll, Hlp		; @
+					; @
+[DefaultInstall.ntx86]
+CopyFiles=Sys.ntx86, Dll.ntx86, Hlp
+CopyINF=usb2lpt.inf
+
+[DefaultInstall.ntamd64]
+CopyFiles=Sys.ntamd64, Dll.ntamd64, Hlp
+CopyINF=usb2lpt.inf
+
+[DefaultUninstall]
+DelFiles=Sys, Dll, Hlp, Gid
+
+[Strings]
+h#s     ="haftmann#software"
+;Makefile fügt lokalisierte Strings ans Datei-Ende an
+;Zeilen mit @ am Ende werden für die MultiLanguage-INF gelöscht
+;(kann ohnehin nicht unter Win98 installiert werden)

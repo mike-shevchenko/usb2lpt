@@ -1,0 +1,19 @@
+[OPTIONS]
+COMPRESS=12 Hall Zeck
+LCID=0x407 0x0 0x0 ; Deutsch (Standard)
+REPORT=Yes
+TITLE=h#s USB-zu-LPT-Konverter
+HLP=usb2l_de.hlp
+
+[FILES]
+usb2l_de.rtf
+
+[MAP]
+Adresse=1
+Erweiterung=2
+Methode=3
+PerfOpt=4
+Statistik=5
+
+[CONFIG]
+BrowseButtons()

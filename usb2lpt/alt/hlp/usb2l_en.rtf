@@ -1,0 +1,38 @@
+{\rtf1\ansi \deff0\deflang1024{\fonttbl{\f0\froman Times;}{\f1\froman Symbol;}{\f2\fswiss Helvetica;}{\f3\fswiss Arial;}{\f4\froman Times New Roman;}}{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;
+\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;\red255\green255\blue0;\red255\green255\blue255;\red0\green0\blue127;\red0\green127\blue127;\red0\green127\blue0;\red127\green0\blue127;\red127\green0\blue0;\red127\green127\blue0;
+\red127\green127\blue127;\red192\green192\blue192;}{\stylesheet{\s244 \f3\fs16\up6\lang1031 \sbasedon0\snext0 footnote reference;}{\s245 \f3\fs20\lang1031 \sbasedon0\snext245 footnote text;}{\s246\li709\ri567\sa240 \i\f3\fs20\lang1031 
+\sbasedon0\snext255 heading 9;}{\s247\li709\sb120\sa240 \i\f3\fs20\lang1031 \sbasedon0\snext255 heading 8;}{\s252\li351\sb120\sa120\keep\keepn \b\f3\fs20\lang1031 \sbasedon0\snext255 heading 3;}{\s253\li351\sb120\sa120\keep\keepn \b\f3\fs20\lang1031 
+\sbasedon252\snext0 heading 2;}{\s254\li351\sb240\sa120\keep\keepn \b\f3\fs20\lang1031 \sbasedon253\snext0 heading 1;}{\s255\li708 \f3\fs20\lang1031 \sbasedon0\snext255 Normal Indent;}{\f3\fs20\lang1031 \snext0 Normal;}{\s2\qc\sb240\sa120\keep\keepn 
+\f3\fs20\lang1031 \sbasedon0\snext2 Bild;}}{\info{\creatim\yr2005\mo3\dy2\hr1\min33}{\revtim\yr2008\mo12\dy28\hr14\min9}{\version36}{\edmins0}{\nofpages0}{\nofwords65536}{\nofchars65536}{\vern16433}}
+\paperw12242\paperh15842\margl1134\margr1134\margt1418\margb1134\gutter0 \deftab708\widowctrl\ftnbj\hyphhotz425 \sectd \linex0\headery709\footery709\colsx709 \pard\plain \f3\fs20\lang1031 +{\footnote \pard\plain \s245 \f3\fs20\lang1031 + A}#{\footnote 
+\pard\plain \s245 \f3\fs20\lang1031 # Address}{\b\cf11 Port address: }Choose the address to be emulated. You may hide a real address too, this will deactivate the present port.
+\par \pard \fi-1800\li1980\sa120\tx1980 {\b\cf14 Reco}{\b\cf14 mmended:\tab }one of {\b\cf10 LPT}{\b\i\cf10 x} ({\i x} = 1 to 3)
+\par \pard You can alse enter an {\b arbitrary address }(decimal or hexadecimal).\line {\b\cf13 Attention! }{\b\i\cf13 
+You should know the conequence of your doing! You may hide (and redirect) port addresses of your network card, video card, or hard disk, this will probably crash your computer or worse.}\line 
+An arbitrary address is the only solution to have more than 3 parallel ports on your computer. Your application software must offer the possibility to use an address too.
+\par \pard \sa120 {\f1\fs23 \page }+{\footnote \pard\plain \s245 \f3\fs20\lang1031 + A}#{\footnote \pard\plain \s245 \f3\fs20\lang1031 # Extension}{\b\cf11 LPT extension: }Besides well-known funct
+ionality of a parallel port consisting of 12 (digital) outputs and 5 inputs, a modern port can more, especially streaming 8-bit parallel data in both directions with hardware support. The two new (incompatible but co-existing) protocols are called {\b 
+ECP }and {\b EPP }extension and need some additional port addresses. The traditional port (occupying only 3 contiguous addresses) is called {\b SPP}
+. This converter and this driver emulates all of these extensions if needed. However, most programs don't need extensions.
+\par \pard \fi-1800\li1980\sa120\tx1980 {\b\cf14 Rec}{\b\cf14 ommended:\tab }{\b\cf10 SPP} (extended modes only if your application software explicitely requires)
+\par \pard {\fs16 The }{\b\fs16 EPP }{\fs16 addresses are at base address +3..+7, the }{\b\fs16 ECP }{\fs16 addresses at base address +400h..403h. For more information, see other sources, like http://www.beyondlogic.org/ or http://www.microsoft.com/.}
+\par \pard \sa120 {\f1\fs23 \page }+{\footnote \pard\plain \s245 \f3\fs20\lang1031 + A}#{\footnote \pard\plain \s245 \f3\fs20\lang1031 # Method}{\b\cf11 Trapping method: }
+The reason for problems having a parallel port onto USB is the missing Windows API for handling a parallel port at high level. Therefore, programmers had to program some non-standardized sort of low-level po
+rt access in their application software. This converter (more specifically, the driver) grabs them all and redirects them to the USB.\line Trapping of a set of kernel library functions like {\b\cf10 READ_PORT_UCHAR/WRITE_PORT_UCHAR }
+is by far the obvious way to achieve this, but will not always work.\line The other way is trapping I/O access using {\b\cf10 debug registers}
+, this will catch all (hard-coded) accesses both in user (either V86 or protected mode) and kernel mode. But debug registers are a limited, Pentium-processor-bound, system-shared resource with problems on multi-core machines.
+\par \pard \fi-1800\li1980\sa120\tx1980 {\b\cf14 Recommended:\tab }{\b\cf10 Both schwitches ON, but please leave debug registers OFF on multi-core machines}\line {\i The \ldblquote softer\rdblquote  redirection will be preferred automatically by design.}
+
+\par \pard \sa120 {\f1\fs23 \page }+{\footnote \pard\plain \s245 \f3\fs20\lang1031 + A}#{\footnote \pard\plain \s245 \f3\fs20\lang1031 # PerfOpt}{\b\cf11 Performance Options: }A USB transfer lasts 125\~\'b5s (High-Speed). But an I/O access takes about 1\~\'b5
+s. Without some sort of cacheing, application software will notably slows down.
+\par \pard \sa120 {\b\cf10 Output instructions }can be cached and sent \ldblquote en bloc\rdblquote  via USB to the USB2LPT converter. You can enter a maximum write delay.\line {\b Note: }Every {\i input instruction }
+tends to write out the collected output instructions to preserve order.
+\par \pard \fi-1800\li1980\sa120\tx1980 {\b\cf14 Recommended:\tab }{\b\cf10 switched ON, 200..500 ms}\line {\i Exceptions are high-speed output-only devices, like stepper motors or D/A converters; you should try no cache or very short delays.}
+\par \pard \sa120 At {\b\cf10 input instructions}, no cacheing is possible because program logic depends on bits read. Some thumb programs read ouput-only ports back; in this case, USBLPT can present the last data output. However, some hardware can pul
+l-down intentionally output-only lines.
+\par \pard \fi-1800\li1980\sa120\tx1980 {\b\cf14 Recommended:\tab }{\b\cf10 switched ON}\line {\i Should work for most hardware. If it doesn't work, or you know your hardware, do the particular switch OFF.}
+\par \pard \sa120 {\f1\fs23 \page }+{\footnote \pard\plain \s245 \f3\fs20\lang1031 + A}#{\footnote \pard\plain \s245 \f3\fs20\lang1031 # Statistics}{\b\cf11 Statistics: }This page shows counts of accesses and redirections. So you can see how USB2LPT works.
+
+\par \pard \page 
+\par 
+\par }

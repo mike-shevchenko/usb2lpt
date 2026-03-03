@@ -1,0 +1,27 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: DeleteFirmware - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\user\LOCALS~1\Temp\RSPBF.tmp" with contents
+[
+/nologo /Gz /ML /W3 /O1 /D "WIN32" /D "_CONSOLE" /Fo"Release/" /Fd"Release/" /FD /c 
+"C:\Archives\Ham Radio\USB2LPT\src\fw-utils-en\DeleteFirmware.c"
+]
+Creating command line "cl.exe @C:\DOCUME~1\user\LOCALS~1\Temp\RSPBF.tmp" 
+Creating command line "link.exe kernel32.lib user32.lib /nologo /subsystem:console /pdb:none /machine:I386 /nodefaultlib /out:"Release/DeleteFirmware.exe" /OPT:NOWIN98 /RELEASE /largeaddressaware  ".\Release\DeleteFirmware.obj" "
+<h3>Output Window</h3>
+Compiling...
+DeleteFirmware.c
+Linking...
+
+
+
+<h3>Results</h3>
+DeleteFirmware.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

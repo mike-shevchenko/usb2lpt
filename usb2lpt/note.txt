@@ -1,0 +1,67 @@
+You can use these new versions of driver,
+by using one of the 14 language's .INF file.
+12 help files are missed, there is only a German and an English help file.
+If you install any other language, the hardware wizard should install
+the English help file.
+
+The 64 bit drivers are bare functional, you can run
+Kurzschlusstest.exe and Brenner.exe, but there is currently
+no I/O redirecting.
+However it's easy to write replacement DLLs for some applications,
+like InpOut32.dll, InpOut64.dll, PortTalk.dll (latter for PowerSDR).
+As none of the drivers are release-signed, you must disable
+sign enforcement for Win64 (press F8 at every Windows startup).
+There are tools to disable sign enforcement permanently.
+
+For fallback, old drivers are in the "alt" (German for "old") directory.
+
+
+Change log (+ added feature, - bugfix, * changed):
+ 090503	initial BETA version - without firmware update
++090520	added Russian and Turkish resource (now 10 languages)
+-090610	SubD & Bits graphics position for changing font sizes
+-090616	Invisible bit names on Vista (it's a Vista bug?)
++090616	x64 compilation, not yet tested
++090617	added firmware update and short-circuit test, not tested
+-090630	short-circuit test now functional, firmware update will not work
+	Invisible bit names on Win98 (it's a documentation bug!)
+-091005	Almost-not-working .SYS driver under Win98/Me (hmpf!!)
+	Decision to split usb2lpt.dll into different language versions
+*091010	Split usb2lpt.dll with one language per file (not as executable yet)
++091013	(Hopefully) Multi-processor-safe driver usb2lpt.ntx86.sys,
+	to be copied and renamed manually to system32/drivers/usb2lpt.sys.
+	Stolen debug registers seems to not occur anymore on MP machines!
++091020	Source code added for language-dependent DLL and INF(!) files,
+	in Device Manager, localized strings should occur.
+	Some internal changes to driver code to move toward a two-file
+	solution introducing a universal PORTTRAP.SYS helper DLL.
+*091108	Re-arranged source tree, truly independent language DLLs and INFs.
+	Functional Makefile. BAD_POOL_CALLER bug fixed in usb2lpt.ntx86.sys.
+	This should be a final BETA while testing the 3 drivers on 3 platforms.
+-091109	New BSOD bug MULTIPLE_IRP_COMPLETE_REQUESTS fixed.
+	There is still a PAGE_FAULT BSOD bug on system shutdown.
++091112	Driver package test-signed (still won't load silently on Win64)
+-091116	Last known BSOD: PAGE_FAULT fixed!
+-100112	Makefile error linking Windows98 driver with wrong entry points
+*100112	Rearranged .ZIP file, BETA directory content elevated (i.e. removed)
+	this is now the current driver version
++100429	added Portuguese (Brazilian) resource (now 11 languages)
+*101201	Rearranged .ZIP file esp. for organisation of ATmega firmware
++101213	USB2LPT6 now multifunction device with secondary HID interface.
+	It's a low-performance Win64 workaround for driver signing problems.
+*110707	Slightly bugfixed USB2LPT.SYS has now aggresive defaults for redirection
+-111026	Changed DispatchPower routine, added Hungarian resource
++120219	added Polish resource and help, small fixes in propertysheetprovider
+*130507	Changed firmware for USB2LPT 1.5 and 1.6: Added bit manipulation support,
+	Bulk transfer removed per default, soft descriptors, bi-lingual text
+-130614	added CoInstaller code for FriendlyName text (does it work??)
+*130614	Feature register code for /optional/ Low-Speed Bulk transfer
+-130808	Win98 Monitor tab disappears on activate
+-131004	Wrong LPT assignment: LPT1 was LPT2 internally, etc.
++131028	NT driver modifies BIOS data area too, esp. for WGif12NT.exe
+	useless and untested behaviour for amd64 platform
+-150303	Bluescreen on driver startup for specific processor steppings
+-160210	Double certification: .sys files and newly created .cat files
+
+Known bugs:
+ 160210	ml/ (MultiLanguage) directory fails installation on Win7/64

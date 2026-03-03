@@ -1,0 +1,19 @@
+[OPTIONS]
+COMPRESS=12 Hall Zeck
+LCID=0x409 0x0 0x0 ; English
+REPORT=Yes
+TITLE=h#s USB2LPT Converter
+HLP=usb2l_en.hlp
+
+[FILES]
+usb2l_en.rtf
+
+[MAP]
+Address=1
+Extension=2
+Method=3
+PerfOpt=4
+Statistics=5
+
+[CONFIG]
+BrowseButtons()

@@ -1,0 +1,138 @@
+[Version]
+Signature="$Chicago$"
+Class=Ports
+ClassGuid={4d36e978-e325-11ce-bfc1-08002be10318}
+Provider=%h#s%
+CatalogFile=usb2lpt.cat
+DriverVer=03/13/2015,1.07.2015.0313
+
+[Manufacturer]
+%h#s%=haftmann#software
+%h#s%=haftmann#software,ntx86,ntamd64
+
+[haftmann#software]
+%DevDesc%=Dev,USB\VID_16C0&PID_06B3&MI_00
+%DevDesc%=Dev,USB\VID_16C0&PID_06B4&MI_00
+%DevDesc%=Dev,USB\VID_16C0&PID_06B5
+%DevDesc%=Dev,USB\VID_16C0&PID_06B6&MI_00
+
+[haftmann#software.ntx86]
+%DevDesc%=Dev.ntx86,USB\VID_16C0&PID_06B3&MI_00
+%DevDesc%=Dev.ntx86,USB\VID_16C0&PID_06B4&MI_00
+%DevDesc%=Dev.ntx86,USB\VID_16C0&PID_06B5
+%DevDesc%=Dev.ntx86,USB\VID_16C0&PID_06B6&MI_00
+
+[haftmann#software.ntamd64]
+%DevDesc%=Dev.ntamd64,USB\VID_16C0&PID_06B3&MI_00
+%DevDesc%=Dev.ntamd64,USB\VID_16C0&PID_06B4&MI_00
+%DevDesc%=Dev.ntamd64,USB\VID_16C0&PID_06B5
+%DevDesc%=Dev.ntamd64,USB\VID_16C0&PID_06B6&MI_00
+
+[SourceDisksNames]
+1=%InstDisk%,,
+
+[SourceDisksFiles]
+usb2lpt.inf=1
+usb2lpt.sys=1
+usb2lpt.ntx86.sys=1
+usb2lpt.ntamd64.sys=1
+usb2lpt.dll=1
+usb2lpt.ntx86.dll=1
+usb2lpt.ntamd64.dll=1
+..\en\usb2lpt.hlp=1
+
+[DestinationDirs]
+Sys=10,System32\Drivers
+Sys.ntx86=12
+Sys.ntamd64=12
+Dll=11
+Dll.ntx86=11
+Dll.ntamd64=11
+Inf=17
+Hlp=18
+Gid=18
+
+[Dev]
+CopyFiles=Inf, Sys, Dll, Hlp
+AddReg=AddReg
+
+[Dev.ntx86]
+CopyFiles=Sys.ntx86, Dll.ntx86, Hlp
+CopyINF=usb2lpt.inf
+AddReg=AddReg.NT
+
+[Dev.ntamd64]
+CopyFiles=Sys.ntamd64, Dll.ntamd64, Hlp
+CopyINF=usb2lpt.inf
+AddReg=AddReg.NT
+
+[Dev.ntx86.Services]
+Addservice=usb2lpt,2,AddService
+
+[Dev.ntamd64.Services]
+Addservice=usb2lpt,2,AddService
+
+[AddService]
+DisplayName    = %SvcDesc%
+ServiceType    = 1
+StartType      = 3
+ErrorControl   = 1
+ServiceBinary  = %12%\usb2lpt.sys
+
+[AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,usb2lpt.sys
+HKR,,PortSubClass,1,0
+HKR,,EnumPropPages,,usb2lpt.dll
+
+[AddReg.NT]
+HKR,,PortSubClass,1,0
+HKR,,EnumPropPages32,,usb2lpt.dll
+HKR,,CoInstallers32,0x10000,usb2lpt.dll
+
+[Inf]
+usb2lpt.inf
+
+[Sys]
+usb2lpt.sys
+
+[Sys.ntx86]
+usb2lpt.sys,usb2lpt.ntx86.sys
+
+[Sys.ntamd64]
+usb2lpt.sys,usb2lpt.ntamd64.sys
+
+[Dll]
+usb2lpt.dll
+
+[Dll.ntx86]
+usb2lpt.dll,usb2lpt.ntx86.dll
+
+[Dll.ntamd64]
+usb2lpt.dll,usb2lpt.ntamd64.dll
+
+[Hlp]
+usb2lpt.hlp,..\en\usb2lpt.hlp
+
+[Gid]
+usb2lpt.gid
+
+[DefaultInstall]
+CopyFiles=Inf, Sys, Dll, Hlp
+
+[DefaultInstall.ntx86]
+CopyFiles=Sys.ntx86, Dll.ntx86, Hlp
+CopyINF=usb2lpt.inf
+
+[DefaultInstall.ntamd64]
+CopyFiles=Sys.ntamd64, Dll.ntamd64, Hlp
+CopyINF=usb2lpt.inf
+
+[DefaultUninstall]
+DelFiles=Sys, Dll, Hlp, Gid
+
+[Strings]
+h#s     ="haftmann#software"
+InstDisk="h#s driver disco per il convertitore da USB a LPT"
+DevDesc ="h#s convertitore da USB a LPT"
+SvcDesc ="h#s driver per il convertitore da USB a LPT (usb2lpt.sys)"

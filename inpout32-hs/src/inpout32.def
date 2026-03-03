@@ -1,0 +1,83 @@
+EXPORTS
+;native InpOut32.dll
+Inp32			@1
+Out32			@2
+IsInpOutDriverOpen	@3
+
+;from DLPortIO.dll, the non-buffered functions have the same numerical entries
+DlPortReadPortUchar=Inp32	@4
+DlPortReadPortUlong		@5
+DlPortReadPortUshort		@6
+DlPortWritePortBufferUchar	@7
+DlPortWritePortBufferUlong	@8
+DlPortWritePortBufferUshort	@9
+DlPortWritePortUchar=Out32	@10
+DlPortWritePortUlong		@11
+DlPortWritePortUshort		@12
+DlPortReadPortBufferUchar	@13
+DlPortReadPortBufferUlong	@14
+DlPortReadPortBufferUshort	@15
+
+;Pass control (merely for USB converters, 2014)
+Pass		@16
+
+;Redirection Info and Debug Console (2013)
+Info=InfoA	@18
+InfoW		@19
+
+;Queue functions (2013)
+LptGetAddr	@20
+LptOpen		@21
+LptInOut	@22
+LptOut		@23
+LptIn		@24
+LptDelay	@25
+LptFlush	@26
+LptClose	@27
+LptPass		@28
+
+;PortTalk.dll entries, mainly for PowerSDR
+ExitPortTalk				@32
+InitPortTalk=IsInpOutDriverOpen		@33
+inport=Inp32				@34
+outport=Out32				@35
+
+;IO.DLL compatibility
+IsDriverInstalled=IsInpOutDriverOpen	@40
+ReleasePort=ExitPortTalk		@41
+LeftPortShift				@42
+RightPortShift				@43
+GetPortBit				@44
+NotPortBit				@45
+ClrPortBit				@46
+SetPortBit				@47
+PortDWordIn=DlPortReadPortUlong		@48
+PortWordIn=DlPortReadPortUshort		@49
+PortIn=Inp32				@50
+PortDWordOut=DlPortWritePortUlong	@51
+PortWordOut=DlPortWritePortUshort	@52
+PortOut=Out32				@53
+
+;Original InpOut32.DLL
+MapPhysToLin		@56
+UnmapPhysicalMemory	@57
+GetPhysLong		@58
+SetPhysLong		@59
+
+;Some 64-bitness info
+IsXP64Bit		@60
+DisableWOW64		@61
+RevertWOW64		@62
+;Query redirection info from 64-bit helper process (2025)
+;Needed internally by inpout32.dll from Windows 8+
+;for interprocess communication
+RunQueryWnd		@63
+
+;VDM support
+VDDInitialize		@64
+
+;Inject into a process made for Win9x/Me
+CatchIoW		@66
+
+;Java support, same as jnpout32.dll but tries multiple packages
+JNI_OnLoad		@67

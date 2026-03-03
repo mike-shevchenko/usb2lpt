@@ -1,0 +1,10 @@
+A6-Broschürendruck:
+
+Druckereinstellung:
+	A4 Hochformat
+	doppelseitig, lange Bindekante
+	4-auf-1, von links nach rechts
+
+Seitenfolge:
+	8,1,6,3,2,7,4,5
+

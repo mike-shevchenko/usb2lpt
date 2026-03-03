@@ -1,0 +1,129 @@
+=========================================================
+USB2LPT.SYS  -  macht, dass der USB2LPT-Konverter mittels
+USB2LPT.DLL	IN- und OUT-Zugriffen ansprechbar ist.
+=========================================================
+
+USB2LPT ist ein Konverter vom Universellen Seriellen Bus
+zu einem altbekannten Parallelport.
+Diese gibt es massenhaft zu kaufen, denkt man, aber _kein_ Exemplar
+davon emuliert die _Portzugriffe_!
+
+Achtung! Dieser Treiber ist beta, also nicht
+ausreichend getestet! Vieles ist geplant, manches eingebaut,
+vieles noch tot.
+Bisher war ja jeder in comp.os.programmers.ms-windows.nt.kernel-mode
+der Meinung, dass einen solchen Treiber zu schreiben, ich zitiere:
+ V Ö L L I G   U N M Ö G L I C H   ist. - Mission impossible?
+
+Es geht, der "Trap" von Portzugriffen und deren Umleitung
+auf USB2LPT (lies: USB-zu-LPT), als ob das Parallelport direkt
+im Rechner eingebaut wäre. Das "völlig unmögliche".
+
+Zusätzlich ist eine Anzapfung von READ_PORT_UCHAR und WRITE_PORT_UCHAR
+implementiert worden, die -> sehr sicher <- läuft.
+Und außerdem Zugriffe auf reale Ports verhindert.
+
+Das erste Gerät bekommt automatisch 378h..37Ah (LPT1) zugewiesen.
+Ein zweites USB2LPT-Gerät sollte die Adressen 278h..27Ah "schlucken",
+ein drittes die Adressen 3BCh..3BEh.
+Die emulierte Portadresse sowie Betriebsart können im Geräte-Manager
+eingestellt werden, siehe Screenshot.
+
+Getestet wurde hier nur auf einem W2K-System.
+Unter Windows XP verschwindet im Sekundentakt der Debugregister-Trap.
+Korrekte Funktion auch unter Win98 und WinMe.
+Für Win98 ist ein Klassentreiber zur Druckerunterstützung beigefügt.
+
+Das zu verwendende Programm muss an sich unter Windows verwendbar sein, also
+mit echtem Parallelport laufen und dazu einen entsprechenden Treiber
+mitbringen! Oder man nehme Universaltreiber wie PortTalk, zlportio u.ä.
+
+
+Inbetriebnahme:
+---------------
+System mit Windows, mit oder ohne "echtes" Parallelport.
+
+Zur Installation des Treibers benötigen Sie Administratorrechte.
+Außerdem müssen unzertifizierte Treiber zugelassen werden.
+
+Wegen einer echten USB-Hersteller-ID kommt es ab sofort nicht mehr
+zum Bluescreen bei Kollision mit Cypress.
+
+Ich habe an das "richtige" LPT eine LED-Anzeige ("Mäusekino") angehangen:
+http://www.tu-chemnitz.de/~omat/bastelecke/Rund%20um%20den%20PC/lptchk/
+
+Das Mäusekino ist wirklich immer wieder nützlich, ich würde es stets
+zum Nachbau empfehlen.
+
+Daran einen SHT11 Temperatur- und Feuchte-Sensor:
+http://www.tu-chemnitz.de/~heha/bastelecke/Rund%20um%20den%20PC/SHT11/
+
+Gestartet mit Kommandozeile:
+AllowIO sht11_nt.exe
+
+AllowIO stammt aus dem PortTalk-Paket.
+Die LEDs für D6, D7 und S6=/ACK flackern fleißig im Sekundentakt.
+Das Programm zeigt groß Temperatur und Feuchte an.
+
+Nun das Ensemble an den frisch aufgebauten USB2LPT:
+http://www.tu-chemnitz.de/~heha/bastelecke/Rund%20um%20den%20PC/USB2LPT/
+
+Nun Anstecken von USB2LPT. Es wird die usb2lpt.inf-Datei verfüttert.
+
+Zu kleine Ausgangsspannungen an den Datenleitungen sorgen dafür, dass
+die Pollin-Anzeige LSU7S1011A nichts anzeigt. D5 mit 5V verbinden, geht!
+Auch dieses Problem wird sich mit den Pull-Ups lösen.
+Inzwischen ist in der Firmware Kode enthalten, der die Datenleitungen
+im Offenen Kollektormodus betreiben lässt (m.a.W., da kommen dann
+5V raus). Zur Aktivierung benötigt man ein Mini-Programm.
+
+
+So nicht:
+---------
+Wenn Sie nun denken, Sie schalten die LEDs einfach mittels debug:
+-o378 ff
+
+der hat sich geirrt. Das wird vom 2K/XP komplett abgefangen und zum
+(hypothetischen) Drucker umgeleitet.
+Es geht schließlich mit einem "echten" Parallelport auch nicht!
+
+Unter 98/Me sollte es aber gehen.
+
+
+Anwendungen:
+------------
+In erster Linie wird es um (teure) Programmiergeräte gehen, die an
+irrtümlich gekauften, zu neuen PCs/Laptops zum Laufen gebracht werden
+müssen. Der Privatanwender wird tunlichst darauf achten, bei notwendiger
+Parallelschnittstelle auch einen PC _mit_ Schnittstelle zu kaufen.
+(Das gilt in etwas abgeschwächter Härte auch für die seriellen Ports.)
+
+Im zweiten Schritt wird man sicher den USB2LPT als ein nahezu vollwertiges
+Entwicklungs-Kit sehen, den man für 1001 Zweck gebrauchen kann.
+
+Dafür ist noch der USB2LPT.SYS-Treiber auszufeilen.
+Das schöne am EZUSB ist ja bekanntlich, dass dieser kein Daten-Flaschenhals
+ist wie viele andere USB-Chips.
+
+
+IOCTL-Schnittstelle (Das API):
+------------------------------
+... ist zurzeit nicht dokumentiert; sonst würde USB2LPT sein Ziel
+verfehlen, OHNE Software-Änderung zum Parallelport zu kommen.
+
+Die in der USB2LPT.H angegebene Dokumentation hat jedoch endgültigen
+Charakter; ich habe nicht vor, die IOCTL-Kodes zu verändern.
+Zu öffnen ist das erste Gerät mit CreateFile(TEXT("\\\\.\\LPT1"),...).
+
+Übrigens, über diese Software-Schnittstelle ist es möglich:
+- IN- und OUT-Befehle zwecks Geschwindigkeitssteigerung zusammenzufassen
+- jedes der 17 Portpins einzeln auf Ein- und Ausgang zu schalten
+  (so können auch die Statuseingänge zu Ausgängen werden)
+- Extra-Features wie die Offene Kollektorsteuerung für die Datenpins
+  zu aktivieren
+- den RAM- und EEPROM-Inhalt des Mikrocontrollers zu lesen + schreiben
+
+**************
+
+haftmann#software, 07/06
+henrik.haftmann@e-technik.tu-chemnitz.de

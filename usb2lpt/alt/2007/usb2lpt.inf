@@ -1,0 +1,113 @@
+[Version]
+Signature="$CHICAGO$"
+Class=Ports
+ClassGuid={4d36e978-e325-11ce-bfc1-08002be10318}
+provider=%h#s%
+DriverVer=09/30/2007,1.0.2007.0930
+
+[Manufacturer]
+%h#s%=haftmann#software
+
+[haftmann#software]
+%DeviceDesc%=USB2LPT.Dev, USB\VID_5348&PID_2131&REV_4621&MI_00
+;Diese Vendor-ID ist ausgedacht: Auslaufmodell!
+%DeviceDesc%=USB2LPT.Dev, USB\VID_16C0&PID_06B3&REV_4621&MI_00
+;Voti, 2 Interfaces
+%DeviceDesc%=USB2LPT.Dev, USB\VID_16C0&PID_06B3&REV_4620
+;Voti, 1 Interface
+
+;[PreCopySection]
+;HKR,,NoSetupUI,,1
+
+[SourceDisksNames]
+1=%InstDisk%,,
+;Ohne diese beiden Kommas geht es unter Win98 nicht, verdammt!
+
+[SourceDisksFiles]
+usb2lpt.sys=1
+usb2lpt.dll=1
+usb2lpt.inf=1
+Prop16DE.dll=1
+USB2L_DE.hlp=1
+
+[DestinationDirs]
+USB2LPT.Files.Sys=10,System32\Drivers	;10=%windir% - wegen Win98!
+;Prop16.EN=11	;%windir%\system
+Prop16.DE=11	;%windir%\system
+Prop32=11	;%windir%\system32
+USB2LPT.Files.Inf=17	;%windir%\inf
+;Help.EN=18
+Help.DE=18
+
+[USB2LPT.Dev]
+CopyFiles=USB2LPT.Files.Sys, Prop16.DE, Help.DE
+AddReg=USB2LPT.AddReg
+
+[USB2LPT.Dev.NT]
+CopyFiles=USB2LPT.Files.Sys, Prop32, Help.DE
+AddReg=USB2LPT.AddReg.NT
+
+[USB2LPT.Dev.NT.Services]
+Addservice=USB2LPT,2,USB2LPT.AddService
+
+[USB2LPT.AddService]
+DisplayName    = %SvcDesc%
+ServiceType    = 1	;Kernel-Treiber
+StartType      = 3	;Start bei Bedarf
+ErrorControl   = 1	;Normale Fehlermeldung
+ServiceBinary  = %12%\USB2LPT.sys
+
+[USB2LPT.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,USB2LPT.sys
+HKR,,PortSubClass,1,0
+HKR,,EnumPropPages,,USB2LPT.dll
+HKR,,CoInstallers,0x10000,USB2LPT.dll
+
+[USB2LPT.AddReg.NT]
+HKR,,PortSubClass,1,0	;als LPTx vom ClassInstaller aufzählen lassen!
+HKR,,EnumPropPages32,,USB2LPT.dll
+;EnumPropPages() erzeugt zwei zusätzliche Eigenschaftsseiten
+HKR,,CoInstallers32,0x10000,USB2LPT.dll
+;CoDeviceInstall() verarbeitet DIF_NEWDEVICEWIZARD_FINISHINSTALL
+
+[USB2LPT.Files.Sys]
+USB2LPT.sys
+
+[USB2LPT.Files.Inf]
+USB2LPT.inf
+
+[Prop32]
+USB2LPT.dll
+
+;[Prop16.EN]
+;USB2LPT.dll=Prop16EN.dll
+
+[Prop16.DE]
+USB2LPT.dll,Prop16DE.dll
+
+;[Help.EN]
+;USB2LPT.hlp=USB2L_EN.hlp
+
+[Help.DE]
+USB2LPT.hlp,USB2L_DE.hlp
+
+;[DefaultInstall]
+;CopyFiles=USB2LPT.Files.Sys, Prop16.%LANG%, Help.%LANG%, USB2LPT.Files.Inf
+
+;[DefaultInstall.NT]
+;CopyFiles=USB2LPT.Files.Sys, Prop32, Help.%LANG%, USB2LPT.Files.Inf
+
+[Strings]
+;LANG	=EN
+;h#s	="haftmann#software"
+;InstDisk="h#s USB to LPT converter driver diskette"
+;DeviceDesc="h#s USB to LPT converter"
+;SvcDesc	="h#s driver for USB to LPT converter (USB2LPT.sys)"
+
+;[Strings.0407]
+LANG	=DE
+h#s	="haftmann#software"
+InstDisk="Treiberdiskette zu h#s USB-zu-LPT-Umsetzer"
+DeviceDesc="h#s USB-zu-LPT-Umsetzer"
+SvcDesc	="h#s Treiber für USB-zu-LPT-Umsetzer (USB2LPT.sys)"

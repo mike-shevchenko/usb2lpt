@@ -1,0 +1,11 @@
+Hi Hennie,
+
+The firmware utility programs in the source directory for USB2LPT were all in German, so I converted them to English as a way of contributing something to the project.
+
+Files are attached for your website.
+
+73,
+
+Rob VK3XVK 
+
+judd@ob-wan.com

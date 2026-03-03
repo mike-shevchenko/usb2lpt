@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<!-- saved from url=(0044)https://heha.fwh.is/usb/USB2LPT/index.en.htm -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="date" content="2004-10-10">
+<meta name="keywords" lang="de" content="USB, LPT, Parallel, Parallelport, Druckerport, Konverter, Adapter">
+<meta name="keywords" lang="en" content="USB, LPT, parallel, parallel port, printer port, converter, adaptor">
+<link rel="alternate" href="https://heha.fwh.is/usb/USB2LPT/index.de.htm">
+<link rel="prev" href="https://heha.fwh.is/usb/u2spdif/">
+<link rel="next" href="https://heha.fwh.is/usb/usbfloppy/">
+<link rel="stylesheet" href="./index_files/h.css">
+<script src="./index_files/h.js.download"></script>
+<title>Converter From USB To Parallel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="https://heha.fwh.is/icons/laptop.png"></head><body><div id="LangSel" class="noprint">&nbsp;<a class="nul" href="https://heha.fwh.is/usb/USB2LPT/index.de.htm" title="Deutscher Originaltext">🇩🇪</a></div><div id="NavBar">Content</div><nav id="Nav"><ol><li><a href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#1">Operational areas</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#Performance">Restrictions, Performance</a><ol><li><a href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#Performance.1">Should I use this?</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#Performance.2">Current versions</a></li></ol></li><li><a href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#driver">Software</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#4">Usage</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#5">Frequently Asked Questions </a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#6">Clones</a></li></ol><div id="X" title="Close content overlay">X</div></nav>
+
+<p>
+<i>Keywords:</i> USB, LPT, parallel, parallel port, printer port, converter, adaptor;
+ programmer, ATmega, ISP, FPGA, CPLD, JTAG, direct port access emulation, IEEE 1284, IEEE1284
+
+</p><h1 align="center"><img src="./index_files/usb.gif" alt="USB-Logo">
+ Converter From USB To Parallel <img src="./index_files/subd25.gif" alt="25pol. SubD-Buchse"></h1>
+
+<b style="color:darkgreen">
+Contrary to all other USB→Parallel adapters which can connect to printers only,
+this makes connection to most hardware - <i>without</i> adapting the software!</b>
+<b>A parallel port will be
+<a href="http://en.wikipedia.org/wiki/Virtualization#Hardware" title="I/O instructions are catched an re-directed via USB">virtualized</a>
+by the accompanying driver.</b>
+The entire circuitry fits into a usual D-Sub shell housing.
+<p>
+A reverse device called <a href="https://heha.fwh.is/usb/USB2LPT/lpt2usb.en.htm">LPTzUSB</a> for connecting a USB printer
+to a legacy parallel port is available since 2006.
+</p><p>
+This USB2LPT is not suitable for capturing parallel printer data.
+For this purpose, <a href="https://heha.fwh.is/usb/LptCap/index.en.htm">LptCap</a> exists.
+</p><p>
+For ordering devices, please <a href="https://heha.fwh.is/usb/USB2LPT/email">email</a> me.
+
+</p><blockquote class="greenbox">
+<ul style="background:#F0FFF0">
+ <li><b style="color:red">Read this when you plan to purchase: <a href="https://heha.fwh.is/usb/USB2LPT/nrnd.en.htm">Not recommended for new designs</a></b>
+ </li><li><a href="https://heha.fwh.is/usb/USB2LPT/liste.en.htm">List of successfully tested programs</a>
+ </li><li>To <a href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#driver" class="lf" title="see below">driver software</a>
+ </li><li>USB2LPT is a <a href="https://heha.fwh.is/usb/USB2LPT/mf.en.htm">multifunction device</a> but not complete,
+  missing <a href="http://en.wikipedia.org/wiki/Joint_Test_Action_Group">JTAG</a> due to documentation
+ </li><li><a href="https://heha.fwh.is/usb/USB2LPT/faq.en.htm">Frequently asked questions (FAQ)</a>
+ </li><li>The <a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm">Application Programmer Interface (API)</a>
+  for direct access to USB2LPT without INPOUT32.DLL or similar
+</li></ul>
+</blockquote>
+
+<section class="collapsed" id="1"><h2>Operational areas<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#1" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+Typical devices are:<ul><font color="green">
+ <li>Programming devices (AVR, JTAG…)
+ </li><li>Data logger, data acquisition
+ </li><li>slow controls, like for garden, model railway…
+ </li><li>Synchronous bus connections, like I²C, SPI…
+ </li></font><li><font color="green">Laboratory automation, simple robots
+</font></li></ul>
+Certain equipment categories are excluded from correct emulation:
+<ul>
+<li><font color="red">Time-critical equipment,
+ like direct stepper motor controls (above 100&nbsp;Hz or so)</font>
+<br><small>Due to free programmability of the microcontroller used
+ you may run dedicated stepper motor control software on its 8051 core
+ and so greatly reduce the impact to the overall PC performance.
+ Access to source code of the stepper motor control software is required. 
+</small>
+</li><li><b style="color:red;text-decoration:blink">Again, for the blind and deaf: It doesn't work for stepper motors, so not for CNC machines.</b>
+<blockquote class="redbox">
+<p align="center"><big>A typical boring e-mail conversation … please do not ask the same again and again:</big></p>
+<dl>
+<dt style="color:blue"><big>&gt;</big> I have to control an old CCD camera with
+ LTP <i style="color:black">[sic]</i> bidirectional <i style="color:black">[sic, surely not]</i> protocol.
+ My application needs to communicate with the CCD console to start the image
+ integration (pulsing and clearing the ccd array), stop the acquisition
+ (saving the data in a HW buffer) and download them on PC.
+</dt><dd>Expect image download times in hours, even with high-speed USB2LPT.
+ If it would ever work. Possibly your hardware requires 5&nbsp;V signaling.
+ Then USB2LPT Low-Speed would help, then expect image download time in days.<p>
+
+</p></dd><dt style="color:blue"><big>&gt;</big> All functions are
+quickly performed with old PC (with win 98&nbsp;or XP) having a LPT port, but
+today we would like to use the new laptops or desktop computers to do this
+(but without the parallel port).
+</dt><dd><ol>
+<li>Don't use cripplebooks. Only laptops having an ExpressCard slot are extensible enough.
+</li><li>Avoid using closed-source hardware-accessing software, insist upon getting source.
+ <small><br>Otherwise you are bound to old hardware and operating systems
+ for the entire lifetime of your equipment.
+ The same applies to Dongles.</small>
+</li><li>Check whether your software relies to InpOut32.dll.
+   If so, you can skip 4. and 5. and you are quite lucky.
+</li><li>Check whether your software can handle non-standard port addresses.
+</li><li>Check whether your software, especially its hardware access, runs under 64bit Windows (for the future).
+</li><li>Buy any PCI or PCIexpress parallel port card.
+</li></ol>
+
+</dd></dl>
+</blockquote>
+</li><li><font color="red">Things with <a href="https://heha.fwh.is/usb/USB2LPT/vorbei.en.htm">»intentionally« hard-coded (non-hookable)</a>
+ drivers, such as Dongles (= software protection plugs)</font>
+<br><small>For most software there is a USB dongle available too.</small>
+</li><li><b style="color:red;text-decoration:blink">Again, for the blind and deaf: It doesn't work for software protection devices (dongles).</b>
+</li></ul>
+The software accessing the parallel hardware must be run under Windows!
+A DOS program may run in a DOS box, window or full-screen.
+16-bit Windows programs are supported too.
+A Pentium class processor is required. 486&nbsp;is too old.
+
+</span></section><section class="collapsed" id="Performance"><h2>Restrictions, Performance<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#Performance" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+
+<p>Interception of port access instructions take place in the driver in privileged <i>ring0</i> mode
+using hand-optimized assembly code, so <i>this</i> is as fast as possible.
+But the time for the I/O interception is small compared to the time needed
+<b>for each IN instruction — a USB frame must be awaited, at least 125&nbsp;µs</b>.
+This may lead to 100x lengthening of time! (High-Speed USB2LPT)</p><p>
+
+<font color="blue" size="-1">I will hope that your software is not so much
+input-intensive. While processing time is lengthened, the processor yields
+to other running processes, so the processing load is kept low.
+</font></p><p><font color="blue" size="-1">There are two known options to shorten awaiting of IN instructions:</font></p><ul><font color="blue" size="-1">
+<li>Modifying the software and optimizing its data flow enables concatenating multiple IN instructions into one USB packet.
+<i>But that's exactly what should be avoided.</i>
+</li><li>A replacement <a href="http://en.wikipedia.org/wiki/Host_controller_interface">host controller driver</a>
+which can insert outstanding <a href="http://en.wikipedia.org/wiki/USB#System_design">BULK transfers</a> into the current (not the next) USB microframe.
+<i>This is very hard to program, if even possible in a non-realtime OS, I cannot afford this solution.
+However, at least one company told me that they wrote such a driver but for DOS. But didn't gave me source code:-(</i>
+</li></font></ul><font color="blue" size="-1">
+In contrast to “competitors” I don't want to make false hope!</font><br>
+OUT instructions do not lead to considerable lengthening of time due to auto-concatenating write-back feature of driver software.
+<p>
+It is stupid to use this converter only for a printer!
+All other converters do this job correct! They are inexpensive too.<br>
+However, this converter contains a printer-compatible USB interface,
+therefore, printing is possible without loss of performance,
+see USB2LPT as <a href="https://heha.fwh.is/usb/USB2LPT/mf.en.htm">multifunction device</a>.
+</p><p>
+Programs that come with her own kernel driver will work too.
+This ist due to the “brute force” of a debug register trap.
+</p><p>
+Interferences with debuggers may occur.
+For program developers, this converter is relatively uninteresting.
+
+</p><blockquote style="background:#F0F0F0;padding:2px 1em;-moz-border-radius:4px;border-radius:4px">
+<section class="collapsed" id="Performance.1"><h3>Should I use this?<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#Performance.1" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h3><span>
+ There are some better options to get a parallel port if you need one.
+ Read this list of <b>available adapters</b> and their advantages / disadvantages:<ul>
+ <li><a href="http://en.wikipedia.org/wiki/Pcmcia">PCMCIA</a>:<ul style="list-style-type:none">
+  <li><b style="color:green">+</b> True parallel port with ECP/EPP and expected speed
+  </li><li><b style="color:green">+</b> Base address same as built-in (378h, 278h) due to <a href="http://en.wikipedia.org/wiki/Industry_Standard_Architecture">ISA</a> roots
+  </li><li><b style="color:green">+</b> No driver necessary
+  </li><li><b style="color:red">–</b> Only available on very old or specialized laptops and notebooks
+ </li></ul><br>
+
+ </li><li><a href="http://en.wikipedia.org/wiki/Expresscard">ExpressCard</a> (<a href="http://en.wikipedia.org/wiki/PCI_Express">PCIe</a> based):<ul style="list-style-type:none">
+  <li><b style="color:green">+</b> True parallel port with ECP/EPP and expected speed
+  </li><li><b style="color:red">–</b> Base address offset to &gt;1000h (your software must cope with this, or you need a patch or <a href="https://heha.fwh.is/usb/USB2LPT/AddressTranslator.en.htm">an address-shift driver</a>)
+  <br>But there are <a href="http://www.wantronix.de/index.php?main_page=product_info&amp;products_id=50679">exceptions</a>!
+  </li><li><b style="color:gray">±</b> Driver sometimes necessary, depends on operating system version and model
+  </li><li><b style="color:green">+</b> Available on current laptops, notebooks
+  </li><li><b style="color:red">–</b> Not available on subnotebooks and netbooks
+  </li><li><b style="color:red">–</b> Expensive
+  </li><li><b style="color:red">–</b> Cumbersome due to the thick cable on the litte notebook
+  </li><li><b style="color:red">–</b> Likelihood of confusion with USB based ExpressCards, see below
+ </li></ul><br>
+
+ </li><li><a href="http://en.wikipedia.org/wiki/Expresscard">ExpressCard</a> (<a href="http://en.wikipedia.org/wiki/USB">USB</a> based):<ul style="list-style-type:none">
+  <li><b>→</b> Electrically same as USB→ParallelPrinter adapter! See below
+ </li></ul><br>
+
+ </li><li>USB→ParallelPrinter adapter:<ul style="list-style-type:none">
+  <li><b style="color:green">+</b> Driverless PnP support for parallel printers, emulates a USB printer
+  </li><li><b style="color:green">+</b> USB available everywhere
+  </li><li><b style="color:red">–</b> Not a true parallel port, doesn't work with almost all programs,
+  including scanners, relay cards, data acquisition etc.,
+  <i>except</i> my programs especially prepared for such adapters, e.g.
+  <a href="https://heha.fwh.is/usb/USB2LPT/root/hs/DLO_UsbPrn.zip/">DiscoLitez WinAmp plugin</a>,
+  <a href="https://heha.fwh.is/usb/USB2LPT/root/hs/AD9834.zip/">AD9834 DDS generator interface</a>
+  </li><li><b style="color:red">–</b> Even when resellers claim uniqueness, these are always the same (they lying)
+ </li></ul><br>
+
+ </li><li><a href="http://en.wikipedia.org/wiki/Conventional_PCI">PCI</a> or <a href="http://en.wikipedia.org/wiki/PCI_Express">PCIe</a> cards (for desktop computers):<ul style="list-style-type:none">
+  <li><b style="color:green">+</b> True parallel port with ECP/EPP and expected speed
+  </li><li><b style="color:red">–</b> Base address offset to &gt;1000h (your software must cope with this, or you need a patch or <a href="https://heha.fwh.is/usb/USB2LPT/AddressTranslator.en.htm">an address-shift driver</a>)
+  </li><li><b style="color:gray">±</b> Driver sometimes necessary, depends on operating system version and model
+  </li><li><b style="color:green">+</b> Cheap and easy to handle
+ </li></ul><br>
+
+ </li><li><b>This</b> USB2LPT:<ul style="list-style-type:none">
+  <li><b style="color:green">+</b> <i>Emulated (virtualized)</i> true parallel port with ECP/EPP
+  </li><li><b style="color:red">–</b> Reduced speed due to emulation and (mainly) USB bus transfer cycles (expect 10..100 times slower)
+  </li><li><b style="color:green">+</b> Base address same as built-in (378h, 278h)
+  </li><li><b style="color:red">–</b> Doesn't work with programs that expect a true PnP driver stack (scanners, ZIP drives) and software that disables port access redirection (dongles)
+  </li><li><b style="color:green">+</b> USB available everywhere
+  </li><li><b style="color:red">–</b> Driver necessary
+  </li><li><b style="color:red">–</b> Driver unstable, tricky, currently no driver for Linux
+  </li><li><b style="color:green">+</b> Smart and handy cabling with thin USB wire
+  </li><li><b style="color:green">+</b> open-source, multi-language, extensible, life-time support
+ </li></ul>
+</li></ul>
+</span></section></blockquote>
+
+<section class="collapsed" id="Performance.2"><h3>Current versions<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#Performance.2" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h3><span>
+
+There are <a href="https://heha.fwh.is/usb/USB2LPT/ul-hist.en.htm">older revisions</a>,
+maybe easier to understand or to clone.
+Moreover a <a href="https://heha.fwh.is/usb/USB2LPT/ul-khs.htm">cloning suggestion with 100&nbsp;% through-hole components</a>.
+All these revisions are supported with current firmware and driver software.
+<p>
+</p><table border="" cellspacing="0" cellpadding="8">
+<tbody><tr><td align="center"><a href="https://heha.fwh.is/usb/USB2LPT/ul-16.en.htm"><img src="./index_files/klein-15.jpg" alt="Sixth Revision"><br><i>Low-Speed</i><br><small>(cloning instructions)</small></a>
+</td><td><b>USB2LPT Release 1.6</b><ul>
+ <li>2008—2012, Quantity: 750 PCBs
+ </li><li>Microcontroller: <i>Atmel</i> ATmega8-16TQ — AVR core at 12.5&nbsp;MHz — USB Low Speed — True 5&nbsp;V design
+ </li><li>No Crystal required. Thanks to continued work of
+  <a href="http://www.obdev.at/products/vusb/index.html">Objective Development</a> Crystal is optional, typical 12&nbsp;MHz, but also 15&nbsp;or 16&nbsp;MHz.
+ </li><li>Integrated bootloader for firmware update via USB (squeezed into 2 KByte of Flash ROM)
+ </li><li>Two USB interfaces (i.e. multifunction device) for raw access and driverless USB HID operation
+ </li><li>Plug housing, yellow activity LED, USB-MiniB receptacle, 25&nbsp;pin SubD receptacle
+ </li><li>PCB population alternative available for 3.3&nbsp;V operation of ATmega controller using a dual diode
+ </li><li>Industrial PCB (two-sided, 150&nbsp;µm), very easy to populate, eight components at all (4x through-hole, 4x SMD)
+ </li><li>Hardware and firmware design conforms to USB idle-mode power consumption limit (≤&nbsp;500&nbsp;µA)
+ </li><li><b style="color:green">Cloning recommended – useful where low-speed is sufficient</b>
+ </li><li>Useful for relay cards, light or LED control, LC displays, slow-moving stepper motors,
+  amateur radio control like for <a nohref="http://nonprofit-hasdr.110mb.com/indexe.html">SDR-1000</a>,
+  I²C bus control, garden / brewery control and supervising
+ </li><li><b style="color:red"><img src="./index_files/attention.gif"> The <i>firmware</i> from december 2010&nbsp;to february 2012&nbsp;is not compatible to Windows Vista and Windows 7 (32 and 64 bit) – please update!</b>
+</li></ul>
+</td></tr><tr><td align="center"><a href="https://heha.fwh.is/usb/USB2LPT/ul-17.en.htm"><img src="./index_files/klein-13.jpg" alt="Seventh Revision"><br><i>High-Speed</i><br><small>(cloning instructions with video)</small></a>
+</td><td><b>USB2LPT Release 1.7</b><ul>
+ <li>2008—2012, Quantity: 850 PCBs
+ </li><li>Microcontroller: <i>Cypress</i> CY7C68013A-56LFXC (FX2LP) — 8051 core at 24&nbsp;MHz — USB High Speed
+ </li><li>Integrated bootloader code for firmware update via USB, compatible to the <code>vend_ax</code> code by Cypress
+ </li><li>Three USB interfaces (i.e. multifunction device) for raw access, USB printer emulation, and driverless USB HID operation
+ </li><li>Industrial PCB (two-sided, 150&nbsp;µm), <a href="https://heha.fwh.is/usb/USB2LPT/reflow.jpg">reflow soldering</a>
+ </li><li>Plug housing, blue High-Speed LED, USB-MiniB receptacle, 25&nbsp;pin SubD receptacle
+ </li><li>3.3&nbsp;V design with disable-able pull-up to 5&nbsp;V on every port pin
+ </li><li>Three extra lines for using as 20-way I/O device <small>(good for <i>simple parallel high-voltage</i> AVR programmers)</small>
+ </li><li>Possibility for downloading volatile firmware extension code to RAM
+     for problem-specific tasks using <a href="https://heha.fwh.is/usb/USB2LPT/root/Mikrocontroller/gpif.htm">GPIF</a> and true 480&nbsp;MBit/s
+ </li><li>New very-low-power low-voltage-drop regulator conforms to USB idle-mode power consumption limit (≤&nbsp;500&nbsp;µA)
+ </li><li><b style="color:green">Professional clones recommended</b>
+ </li><li>Useful for programming devices, FPGA bitstream download, graphical LCD,
+  medium-moving stepper motors (maybe 1000 steps per second)
+</li></ul>
+High-Speed USB2LPT are <b>sold out</b> as any cheap Chinese
+<a href="http://www.ebay.de/itm/272410298525">CY7C68013A development board</a>
+can be filled with my <a href="https://heha.fwh.is/usb/USB2LPT/usb2lpt.zip/src/firmware/USB2LPT2.IIC">usb2lpt2.iic firmware</a>
+and behaves exactly as my USB2LPT then.
+Compare the
+<a href="https://heha.fwh.is/usb/USB2LPT/ul-17.gif" title="This one is for USB2LPT High Speed, latest version">schematics</a>.
+Especially for integrating into existing devices such a solution is preferable.
+
+<!--
+<tr><td align=center><A href="ul-18.gif" totle="Schematic">Number 8
+<td><b>In development:</b> USB2LPT Release 1.8 — <a href="ul-18.zip/">Eagle source</a>
+<ul>
+ <li>USB Full Speed (12 Mbit/s) using Atmel AT90USB168
+ <li>True 5 V input/output levels, changeable to 3.3 V by a solder jumper
+ <li>20 input/output lines, each direction selectable <small>(perfect for <i>simple parallel high-voltage</i> AVR programmers)</small>
+ <li>Easy to clone: less, cheap, widely available components, true USB design
+ <li>Easy to program with your tailored firmware using free C / C++ compiler
+ <br><small>Planned: <a href="../../NC/Mach3Usb/">MACH3 stepper motor adapter</a>,
+ <a href="../oszi/PCS500/index.en.htm">parallel port adapter</a>
+ for <a href="http://kdataserv.fis.fc.ul.pt/~jmal/TclVI_Wiki/index.php/Hackers_guide">Velleman PCS500 oscilloscope</a></small>
+ <li>Preprogramed USB bootloader by Atmel <small>(no programming equipment required)</small>
+</ul>-->
+</td></tr></tbody></table>
+<p>
+You may order devices by mailing to the address below.
+</p>
+
+</span></section></span></section><section class="collapsed" id="driver"><h2>Software<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#driver" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+
+<ul>
+<span style="color:green">That download you need for running the device
+ on your host PC:</span>
+<li><p style="background:#F0FFF0"><a href="https://heha.fwh.is/usb/USB2LPT/usb2lpt.zip"><big><b>Driver for Windows 98/Me/2k/XP/Vista/7/8/10</b></big></a>
+(<!--#fsize virtual="usb2lpt.zip"-->, <!--#flastmod virtual="usb2lpt.zip"-->)
+<a href="https://heha.fwh.is/usb/USB2LPT/usb2lpt.zip/"><img src="./index_files/auge.gif" align="top" alt="Eye" title="browse zipfile" border="0"></a>  
+
+<a href="https://heha.fwh.is/usb/USB2LPT/Beipackzettel.zip/DevMgr.png?bin=PNG"><img src="./index_files/kamera.gif" align="top" alt="Camera" title="Screenshot of Device Manager" border="0"></a>
+<br><small>These drivers are not so much plug'n'play.
+Up to three LPT port address rages are automatically captured.
+Up to 9 devices may be connected due to naming scheme.
+The driver and software is available in
+ <b title="German, English, French, Italian, Spanish, Simplified Chinese, Japanese, Czech, Polish, Turkish, Russian, Portuguese, Finnish">14 languages</b>.</small>
+ <br><i style="color:darkred">Do not try this driver with any other hardware, this will simply not work and may confuse your operating system later!</i>
+ <br>
+ The installer creates <b>four extra pages</b> for “Properties” in Device Manager.
+ <br>
+ Moreover, this .zip archive contains <b>all source files</b> for the <i>driver</i>,
+ the <i>property sheet pages</i> (14 languages), the <i>help file</i> (3 languages),
+ the <i>microcontroller firmware</i> for all USB2LPT revisions, and the <i>utilities</i> for handling the firmware,
+ all in its latest version.
+ <br>The driver is certified.
+</p>
+<b>Note:</b> For Low-Speed USB2LPT (1.5 and 1.6) with Vista/7/8/10 the chip
+uses INTERRUPT instead of BULK pipes.
+<i>As a real bad consequence, emulation speed drops by factor 8.</i>
+You can only circumvent this problem when using 2K/XP and switch to BULK, see Device Manager — Properties for USB2LPT.
+Better you choose High-Speed.
+<br><br>
+
+<font color="green">If you don't got an <b>installation manual</b>:</font>
+</li><li>a <a href="https://heha.fwh.is/usb/USB2LPT/Beipackzettel.zip">Pamphlet.doc</a> as WinWord2000 file
+ <a href="https://heha.fwh.is/usb/USB2LPT/Beipackzettel.zip/"><img src="./index_files/auge.gif" align="top" alt="Eye" title="browse zipfile" border="0"></a>.
+As all images are linked (not embedded), you must unzip the entire archive and then open the .DOC file.
+
+</li><li>For the very rare case of needing port access redirection in Win64 kernel mode
+ you have to disable 
+ <a href="http://en.wikipedia.org/wiki/Kernel_Patch_Protection">PatchGuard</a>.
+ Otherwise, you will get a Blue Screen of Death (BSoD) 0x109 after some seconds or minutes.
+<br><br>
+
+<font color="green">That download you may need when you make your own USB2LPT:</font>
+
+</li><li><a href="https://heha.fwh.is/usb/USB2LPT/fw-utils.en.zip">This package</a> <a href="https://heha.fwh.is/usb/USB2LPT/fw-utils.en.zip/"><img src="./index_files/auge.gif" align="top" alt="Eye" title="browse zipfile" border="0"></a>
+ contains english-message utilities
+ (source files and executables) for USB2LPT production.
+<br><small><i>To be integrated in two-language utilities, because I don't want to maintain doubled source code …</i></small>
+<br><br>
+
+</li></ul>
+
+</span></section><section class="collapsed" id="4"><h2>Usage<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#4" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+<img src="./index_files/emul.png" align="right" hspace="10">
+Have a look to Device Manager!
+In the “Connections (COM &amp; LPT)” tree,
+you will find a new parallel port.
+Its property dialog has four extra sheets:<ul>
+ <li><b>Emulation:</b> Here you can set up properties like the
+  port address emulated, the usage of debug registers, etc.<p>
+ </p></li><li><b>Statistics:</b> Here you can inspect how USB2LPT is working,
+  and maybe shooting some trouble
+ </li><li><b>Monitor:</b> Here you can inspect and modify port pin values
+ </li><li><i>Title unknown:</i> Here you can see the real LPT number assignment
+</li></ul>
+There is an API for programmers too.
+It is simply DeviceIoControl based.
+Open the device with <b>CreateFile</b> and file name
+<code>"\\.\LPT1"</code>
+ (or LPT2 if you already have one), and transfer IN/OUT data with
+(see USB2LPT.A51, label "upv") via a single call of
+<b>DeviceIoControl</b>.
+Here is the <a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm">full API documentation</a>.
+<p>  
+Via IOCTL code IOCTL_VLPT_AnchorDownload, you can inject
+additional firmware to speed-up your applications.
+Therefore, USB2LPT is a
+<b>Pocket Development Kit</b> for EZUSB AN2131/CY7C68013 too.
+</p><p align="right" style="background:#D2E5F4;font-family:helvetica;overflow:hidden">
+These Property Pages are also available in the languages
+German, French, Italian, Spanish, Simplified Chinese,
+Japanese, Czech, Polish, Turkish, Russian, Hungarian, and Bazilian Portuguese.
+</p>
+<br clear="right">
+
+</span></section><section class="collapsed" id="5"><h2>Frequently Asked Questions (FAQ)<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#5" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+
+<p>You can read the FAQ by <a href="https://heha.fwh.is/usb/USB2LPT/faq.en.htm">following this link</a>.
+
+</p></span></section><section class="collapsed" id="6"><h2>Clones<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/index.en.htm#6" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+<ul>
+ <li><a href="https://item.taobao.com/item.htm?spm=a230r.1.14.15.2ca153farLXxKk&amp;id=1165951916&amp;ns=1&amp;abbucket=5#detail">On Taobao</a>
+ </li><li><a href="https://www.aliexpress.com/item/USB-to-USB-LPT-USB2LPT-true-parallel-printer-port-for-all-kinds-of-non-parallel-device/32431367276.html">On AliExpress</a>
+</li></ul>
+
+</span></section><hr>
+<b>HTML mail,
+<a href="http://en.wikipedia.org/wiki/Posting_style">Full-quoted</a> mail,
+or mail with more than 10 lines of footer will be rejected!</b><p>
+When you encounter problems using the device or driver, please include following information:</p><ul>
+ <li>Your operating system and bitness (32&nbsp;or 64 bit) —
+ processor type, service packs, virus scanner, video resolution are out of interest
+ </li><li>Your software, ideally providing a download link, so I can reproduce behaviour
+ </li><li>A description what you do to finally get the error message
+ </li><li>A description what you seen on <a href="https://heha.fwh.is/usb/USB2LPT/2a.png">statistics property sheet page</a> before
+ </li><li>The exact wording of error message,
+ for <a href="http://en.wikipedia.org/wiki/Blue_Screen_of_Death">blue screens</a> the (five) hexadecimal numbers
+</li></ul>
+
+
+<div id="give-freely-root-bcjindcccaagfpapjjmafapmmgkkhgoa" class="give-freely-root" data-extension-id="bcjindcccaagfpapjjmafapmmgkkhgoa" data-extension-name="JSON Formatter" style="display: block;"><template shadowrootmode="open"><style>
+  :host {
+    all: initial;
+  }
+
+  .gf-scroll-remove::-webkit-scrollbar {
+    border-radius-bottom-right: 15px;
+  }
+
+  button {
+    cursor: pointer;
+    transition: transform 0.1s ease;
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+
+  .give-freely-close-button:hover {
+    opacity: 0.7;
+  }
+
+  input[type="radio"] {
+    margin-right: 8px;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid #e5e5e5;
+    margin: 1em 0;
+  }
+
+  dialog::backdrop  {
+    background-color: rgba(180, 180, 180, 0.6);
+  }
+
+  dialog.backdrop-hidden::backdrop  {
+    background-color: transparent;
+  }
+</style><div><div class="gf-app"></div></div></template></div><footer><nav title="Navigation"><a href="https://heha.fwh.is/usb/u2spdif/">Previous article (u2spdif)</a><a href="https://heha.fwh.is/usb/usbfloppy/">Next article (usbfloppy)</a><a href="https://heha.fwh.is/USB2LPT">Directory above (USB2LPT)</a></nav><hr><address><p id="date"><a href="https://heha.fwh.is/usb/USB2LPT/email?Converter%20From%20USB%20To%20Parallel">Henrik Haftmann</a>, created: <time datetime="2004-10-10">October 10. 2004</time> — last modified: <time datetime="2021-10-01">October 1. 2021</time><a class="suppress_before" href="https://de.wikipedia.org/wiki/Creative_Commons"><img src="./index_files/CC_BY_icon.svg" align="right" title="gemeinfrei bei Namensnennung"></a>
+</p></address></footer></body></html>

@@ -1,0 +1,321 @@
+;**********************
+;** Nützliche Makros **
+;**********************
+NEXT	equ	1	;; diese Adresse wird man wohl nie mit XDATA wollen
+PREV	equ	-1
+
+_loaddptr_ MACRO addr	;; Wegen Bug in ASEM51 diese Bocksprünge!
+ if addr EQ NEXT
+	inc	dptr
+ else
+	mov	dptr,#addr
+ endif
+ENDM
+
+_loadkonst_ MACRO konst
+ if konst
+	mov	a,#konst
+ else
+	clr	a
+ endif
+ENDM
+
+_loadreg_ MACRO reg,addr
+ if addr EQ NEXT
+	inc	reg
+ elseif addr EQ PREV
+	dec	reg
+ else
+	mov	reg,#LOW(addr)
+ endif
+ENDM
+
+;==================================
+;== Laden und Speichern in XDATA ==
+;==================================
+
+LOADX MACRO addr	;; Laden von XDATA (feste Adresse) via DataPointer
+;; Leichter zu lesender Lesezugriff auf die vielen im XDATA-Bereich liegenden
+;; EZUSB- und FX2-Register. Ziel immer A. Zugriff mittels DPTR.
+;; Ohne <addr> wird die letzte genommen (also was in dptr noch drinsteht).
+;; Mit der symbolischen Adresse NEXT wird die nächste Speicherzelle gelesen.
+;; (Wird kodesparend als "inc dptr" umgesetzt.)
+;; VR: A, DPTR=addr (falls <addr> angegeben)
+ ifnb <addr>
+  _loaddptr_ <addr>
+ endif
+	movx	a,@dptr
+ENDM
+
+STORX MACRO addr,konst	;; Speichern nach XDATA (feste Adr.) via DataPointer
+;; wie LOADX, jedoch Schreibzugriff. Wird <konst> angegeben, wird diese
+;; Konstante (ohne Präfix "#" angeben!) in das Ziel geschrieben (via A),
+;; ansonsten wird nur A ausgegeben.
+;; Ist die Konstante 0, wird kodesparend "clr a" erzeugt.
+;; VR: A=konst (falls <konst> angegeben), DPTR=addr (falls <addr> angegeben)
+ ifnb <konst>
+  _loadkonst_ <konst>
+ endif
+ ifnb <addr>
+  _loaddptr_ <addr>
+ endif
+	movx	@dptr,a
+ENDM
+
+LDX MACRO addr		;; XDATA-Zugriff kürzer über MPAGE:R0
+;; wie LOADX, aber via R0 statt DPTR. Ergibt kürzeren und schnelleren Kode
+;; als LOADX. Voraussetzung ist dass MPAGE den richtigen High-Teil enthält.
+;; Die meisten EZUSB- und FX2-Register liegen freundlicherweise in _einem_
+;; 256-Byte-Block.
+;; Zusätzlich zur symbolischen Adresse NEXT gibt es die Adresse PREV
+;; zum Zugriff auf den vorhergehenden Speicherplatz.
+;; VR: A, R0=LOW(addr) (falls <addr> angegeben)
+ ifnb <addr>
+  _loadreg_ r0,<addr>
+ endif
+	movx	a,@r0
+ENDM
+LDX1 MACRO addr		;; XDATA-Zugriff kürzer über MPAGE:R1
+ ifnb <addr>
+  _loadreg_ r1,<addr>
+ endif
+	movx	a,@r1
+ENDM
+
+STX MACRO addr,konst	;; XDATA-Zugriff kürzer über MPAGE:R0
+;; wie LDX, jedoch Schreibzugriff.
+;; Zu <konst> gilt das bei STOREX beschriebene.
+;; VR: A=konst (falls <konst> angegeben), R0=LOW(addr) (falls <addr> angegeben)
+ ifnb <konst>
+  _loadkonst_ <konst>
+ endif
+ ifnb <addr>
+  _loadreg_ r0,<addr>
+ endif
+	movx	@r0,a
+ENDM
+STX1 MACRO addr,konst	;; XDATA-Zugriff kürzer über MPAGE:R1
+ ifnb <konst>
+  _loadkonst_ <konst>
+ endif
+ ifnb <addr>
+  _loadreg_ r1,<addr>
+ endif
+	movx	@r1,a
+ENDM
+
+STXW MACRO adr,val	;; 16-bit-Konstante (Big Endian) setzen
+	STX	adr,HIGH(val)
+	STX	NEXT,LOW(val)
+ENDM
+STXW1 MACRO adr,val
+	STX1	adr,HIGH(val)
+	STX1	NEXT,LOW(val)
+ENDM
+IFDEF AutoPtrH
+ AutoPtr equ AutoPtrH	;; Hauptanwendung von STXW auf EZUSB
+ENDIF
+STORXW MACRO adr,val
+	STORX	adr,HIGH(val)
+	STORX	NEXT,LOW(val)
+ENDM
+
+LODS MACRO addr		;; wie 80x86 lodsb, sequenzielles Lesen, "A=*DPTR++"
+;; Bei massenhafter Anwendung am EZUSB, FX2 besser Autopointer verwenden!
+ ifnb <addr>
+  _loaddptr_ <addr>
+ endif
+	movx	a,@dptr
+	inc	dptr
+ENDM
+
+STOS MACRO addr,konst	;; wie 80x86 stosb, "*DPTR++=A" oder "*DPTR++=konst"
+;; Bei massenhafter Anwendung am EZUSB, FX2 besser Autopointer verwenden!
+ ifnb <konst>
+  _loadkonst_ <konst>
+ endif
+ ifnb <addr>
+  _loaddptr_ <addr>
+ endif
+	movx	@dptr,a
+	inc	dptr
+ENDM
+
+LDS MACRO addr		;; wie oben, aber mittels MPAGE:R0, "A=*(MPAGE:R0)++"
+;; Bei massenhafter Anwendung am EZUSB, FX2 besser Autopointer verwenden!
+ ifnb <addr>
+  _loadreg_ r0,<addr>
+ endif
+	movx	a,@r0
+	inc	r0
+ENDM
+
+STS MACRO addr,konst	 ;; "*(MPAGE:R0)++=A" oder "*(MPAGE:R0)++=konst"
+;; Bei massenhafter Anwendung am EZUSB, FX2 besser Autopointer verwenden!
+ ifnb <konst>
+  _loadkonst_ <konst>
+ endif
+ ifnb <addr>
+  _loadreg_ r0,<addr>
+ endif
+	movx	@r0,a
+	inc	r0
+ENDM
+
+MOVW MACRO dest,konst	;Konstante in 16-bit-(SFR-)Register schreiben
+	mov	dest,#HIGH(konst)
+	mov	dest+1,#LOW(konst)
+ENDM
+
+IFDEF AutoPtrH1
+ AutoPtr1 equ AutoPtrH1	;Hauptanwendung von MOVW auf FX2
+ AutoPtr2 equ AutoPtrH2
+ENDIF
+
+MOVWI MACRO dest,konst	;Dito für Little-Endian (Intel-Notation)
+	mov	dest,#LOW(konst)
+	mov	dest+1,#HIGH(konst)
+ENDM
+
+MOVR MACRO destL,destH,konst
+	mov	destH,#HIGH(konst)
+	mov	destL,#LOW(konst)
+ENDM
+
+;=====================
+;== Zugriff auf EP0 ==
+;=====================
+
+IFDEF EP0Buf		;Gleichen Quelltext ermöglichen,
+ Out0BC  equ EP0BCL	;Unterschiede zwischen EZUSB und FX2 glätten
+ In0BC   equ EP0BCL
+ Out0Buf equ EP0Buf
+ In0Buf  equ EP0Buf
+ENDIF
+
+WAIT_EP0_IN MACRO	;Warte bis EP0 bereit
+ IFDEF OutA	;EZUSB-Version
+	LDX	EP0CS
+	jb	ACC.2,$-1
+ ELSE		;FX2-Version
+	mov	a,EP01Stat
+	jb	ACC.0,$-2
+ ENDIF
+ENDM
+
+WAIT_EP0_OUT MACRO	;Warte bis EP0 Daten hat, liefert Länge in A
+ LOCAL again		;Bug im ASEM51: zwischen MACRO und LOCAL dürfen
+ 			;nicht einmal Kommentarzeilen setezn
+;Bei beiden Controllern ist der EP0-Puffer bei jedem Setup-Transfer
+;in CPU-Besitz und muss zunächst der SIE übergeben werden.
+;Ein "scharfer" Default-Out-Puffer ist nicht mit EP0 realisierbar.
+;Was vermutlich dazu führt, dass ein mit OUT-Daten behafteter Setup-Transfer
+;erst mal mit NAK beantwortet wird (der Datenteil) und so ein Frame kostet.
+again:
+	STX	Out0BC		;Puffer zum SIE-Besitz
+ IFDEF OutA	;EZUSB-Version
+	LDX	EP0CS
+	jb	ACC.3,$-1
+	LDX	Out0BC		;Bytes im Puffer
+ ELSE		;FX2-Version
+	WAIT_EP0_IN		;warten bis EP0 bereit (Puffer gefüllt)
+	LDX			;Bytes im Puffer
+ ENDIF
+	jz	again		;Null Bytes? Nächsten Block erwarten!
+ENDM
+
+;=====================
+;== Sonstige Makros ==
+;=====================
+
+JMPTBL	MACRO tbl	;; Sprung mit AJMP-Tabelle, A=Index (<128!)
+;; VR: DPTR=tbl, A*=2
+;; Dieses Makro kehrt nicht zurück! Muss an einem Kode-Ende stehen (wie JMP)
+	rl	a
+	mov	dptr,#tbl
+	jmp	@a+dptr
+ENDM
+
+RETC	MACRO		;; 2-Byte-Return mit C=1 (bspw. für Sprungtabelle)
+	setb	C
+	ret
+ENDM
+
+RETNC	MACRO		;; 2-Byte-Return mit C=0 (bspw. für Sprungtabelle)
+	clr	C
+	ret
+ENDM
+
+DIW MACRO d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z
+;; "dw" mit Ablage der Bytes LSB zuerst ("Little Endian", "Intelnotation")
+;; Notwendig für USB-Deskriptoren
+;; Der ASEM51 benutzt wie auch der 8051-Kern das Gegenteil.
+	db	LOW(d)
+	db	HIGH(d)
+ ifnb <e>
+  DIW <e>,<f>,<g>,<h>,<i>,<j>,<k>,<l>,<m>,<n>,<o>,<p>,<q>,<r>,<s>,<t>,<u>,<v>,<w>,<x>,<y>,<z>
+ endif
+ENDM
+
+DWI MACRO d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z	;; ebenso
+	DIW	<d>,<e>,<f>,<g>,<h>,<i>,<j>,<k>,<l>,<m>,<n>,<o>,<p>,<q>,<r>,<s>,<t>,<u>,<v>,<w>,<x>,<y>,<z>
+ENDM
+
+SAVEORG MACRO adr,fill	;; Sicheres ORG, ggf. mit Füllbyte
+ IF adr < $
+  $ERROR(Defining of a backward origin is not allowed!)
+ ENDIF
+ IFNB <fill>		;; Füllbyte vermeidet Lücke in HEX-Datei
+  REPT (adr-$)
+	db	fill
+  ENDM
+ ELSE
+  ORG adr		;; ansonsten Lücke in Hex-Datei
+ ENDIF
+ENDM
+
+ALIGN MACRO ali,fill	;; Ausrichtung, ggf. mit Füllbyte
+ SAVEORG ($+ali-1)/ali*ali,fill
+ENDM
+
+EVEN MACRO		;; Ausrichtung an geraden Adressen mit Füll-Null
+	ALIGN 2,0	;; erforderlich für alle FX2-Deskriptoren
+ENDM
+
+SYNCDELAY MACRO ninst,fcpu,fif	;; NUR IN SOFTWARE MIT MPAGE:R0 VERWENDEN!
+	inc	dptr	;; 1 Byte für 3 Takte
+ENDM
+
+CJE MACRO x,y,z		;; der "fehlende" Befehl
+;; Dieser "fehlende" Befehl wird mittels Sprung über Sprung synthetisiert
+	cjne	x,y,$+5
+	ajmp	z
+ENDM
+
+CMP MACRO x,y		;; Vergleich nach CY mittels CJNE
+;; Dieser "fehlende" Befehl wird mittels CJNE und Sprungdistanz Null
+;; synthetisiert. CJNE verändert das C-Flag wie SUBB.
+	cjne	x,y,$+3
+ENDM
+
+LD MACRO x,y,z		;; Kettenladebefehl via Register A
+;; Weil sich Register nicht direkt zuweisen lassen ("mov r2,r3")
+;; und die Verwendung von Adressen ("mov r2,AR3") Nachteile mit sich bringt
+;; (Bankfixierung), ist ein Kettenladen via A günstig: genauso lang,
+;; genauso schnell. Einziger Nachteil: A wird zerstört.
+ IFB <z>
+	mov	A,y
+	mov	x,A
+ ELSE
+ 	mov	y,z
+ 	mov	x,y
+ ENDIF
+ENDM
+
+NIB2HEX MACRO		;; eher als Gedankenstütze!
+	anl	a,#0Fh	;; Die Version
+	add	a,#90h	;; daa
+	da	a	;; add F0
+	adc	a,#40h	;; adc 40
+	da	a	;; geht am 8051 nicht! ANL löscht das AC-Flag nicht.
+ENDM

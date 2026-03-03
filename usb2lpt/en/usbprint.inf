@@ -1,0 +1,52 @@
+[Version]
+Signature="$CHICAGO$"
+Class=USB
+Provider=%MSFT%
+
+;[PreCopySection]
+;HKR,,NoSetupUI,,1
+
+[Manufacturer]
+%MSFT%=Microsoft
+
+[Microsoft]
+%UsbClass07%=UsbPrint.Dev,USB\Class_07
+
+[UsbPrint.Dev]
+CopyFiles=Files.Sys,Files.Dll
+AddReg=UsbPrint.AddReg
+
+[DestinationDirs]
+Files.Inf=17	; \windows\inf
+Files.Sys=10,system32\drivers
+Files.Dll=11
+
+[Files.Sys]
+usbprint.sys
+
+[Files.Dll]
+usbmon.dll
+
+[Files.Inf]
+usbprint.inf
+
+[UsbPrint.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,usbprint.sys
+HKLM,System\CurrentControlSet\Control\Print\Monitors\usbmon,Driver,,usbmon.dll
+
+[SourceDisksNames]
+1=%InstDisk%,,
+
+[SourceDisksFiles]
+usbprint.sys=1
+usbmon.dll=1
+usbprint.inf=1
+
+[DefaultInstall]
+CopyFiles=Files.Sys,Files.Dll,Files.Inf
+
+[Strings]
+MSFT="Microsoft Corp."
+InstDisk="h#s USB to LPT converter driver diskette"
+UsbClass07="USB printer support"

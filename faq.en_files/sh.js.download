@@ -1,0 +1,923 @@
+/*********************************
+ ** Quelltext-Highlighter	**
+ ** TODO: Symbolverfolgung	**
+ ** Teilweise: Sprungverfolgung	**
+ ** Aufruf: hilitePre(node)	**
+ ** Voraussetzung: querySelectorAll, <canvas>
+ ** Chrome1/Firefox3.5/IE9/Opera10/Safari3.2
+ *********************************/
+function getSpan(xref) {
+ var ret={a:xref.pos.line,b:xref.pos.line};
+ for (var i=0; i<xref.ref.length; i++) {
+  var l=xref.ref[i].line;	// Zeile der Referenz (goto oder call)
+  if (ret.a>l) ret.a=l;
+  if (ret.b<l) ret.b=l;
+ }
+ ret.l=ret.b-ret.a;
+ return ret;
+}
+function refHasTyp(xref,typ) {
+ if (!xref) return false;
+ if (!xref.ref) return false;
+ for (var i=0; i<xref.ref.length; i++) if (xref.ref[i].typ==typ) return true;
+ return false;
+}
+function needLane(xref) {
+ return refHasTyp(xref,"goto");
+}
+function isCalled(xref) {	// anderen Pfeil malen bei Unterprogrammstart
+ return refHasTyp(xref,"call");
+}
+function assignLane(xrefs,lane,a,b) {	// Findet alle Kandidaten für eine Gasse per Rekursion
+ for (var i=0; i<xrefs.length; i++)
+   if (needLane(xrefs[i]) && !xrefs[i].lane) {	// Nicht bereits zugewiesenes Element
+  var span=getSpan(xrefs[i]);
+  if (a<=span.a && span.b<=b) {		// vollständig im zuweisbaren Bereich?
+   xrefs[i].lane=lane;			// zuweisen
+   assignLane(xrefs,lane,a,span.a-1);	// Mit „geteilter Wüste“ weitermachen: vordere Hälfte
+   assignLane(xrefs,lane,span.b+1,b);	// hintere Hälfte
+   return true;
+  }
+ }
+ return false;				// Alle xrefs sind mit Gassen belegt: fertig
+}
+
+// Kopier-Konstruktor
+function Pos(pos) {
+ return {
+  pos:pos.pos,
+  line:pos.line,
+  column:pos.column,
+  inScope:function(scope) {
+   if (!scope) return true;
+   return (!scope.start||scope.start.pos<=this.pos)
+       && (!scope.end||scope.end.pos>=this.pos);
+  }
+ };
+}
+
+// (unbekannten) Verweis zu Kreuzreferenzliste hinzufügen
+// pos = {pos,line,col,typ}
+function xref_add_ref(xrefs,name,pos,ns) {
+ var rname=name;
+ if (rname=="@b") rname="@@";
+ else if (rname.match(/^[0-9]b$/)) rname=rname.charAt(0);
+ for (var i=xrefs.length;--i>=0;) {
+  var xref=xrefs[i];
+  if (xref.name==rname && xref.ns==ns && pos.inScope(xref.scope)) {
+   xref.ref.push(pos); return;	// if no scope, global scope is assumed
+  }
+ }
+ if (ns) xrefs.push({name:name,ns:ns,ref:[pos]});
+ else xrefs.push({name:name,ref:[pos]});	// Verwaistes Symbol (vorerst)
+}
+// Definition zur Kreuzreferenzliste hinzufügen
+// Ist eine gleiche Definition bereits vorhanden,
+// wird der vorhergehende Scope abgeschnitten (für Labels und @f/@b),
+// dürfte jedoch ansonsten gar nicht vorkommen (Syntaxfehler).
+// Da das Scope-Ende noch gar nicht festliegt ...
+// Verwaiste Symbole werden entsprechend aufgesammelt.
+// Am Ende dürften keine verwaisten Symbole mehr da sein
+// (befinden sich in Header-Dateien oder der Kommandozeile im makefile).
+// <type> ist "p(reprocessor)","l(abel)","t(ypedef)","v(ar)","f(unction)","m(acro)" usw. (je nach Sprache)
+function xref_add_def(xrefs,name,type,pos,ns,scope) {
+ if (!scope) scope={start:pos};
+ var xref={name:name,type:type,pos:pos,scope:scope,ref:[]};
+ if (ns) xref.ns=ns;
+ if (type=="l") {	// Sonderfall Assembler-Labels (MASM,TASM,gas)
+  var rname=name;			// Ruf-Name
+  if (rname=="@@") rname="@f";			// MASM (@@ kann nur mit @f oder @b angesprungen werden)
+  else if (rname.match(/^[0-9]$/)) rname+="f";	// gas (1 kann nur mit 1f und 1b angesprungen werden)
+  for (var i=xrefs.length;--i>=0;) {	// vorhandene XREFs rückwärts durchsuchen
+   if (xrefs[i].name==rname) {		// Ruf-Name bereits vorhanden?
+    if (!xrefs[i].type) {		// Ohne Definition?
+     xrefs[i].name=name;		// durch Name ersetzen
+     xrefs[i].scope={};			// Definition vorspannen!
+     xrefs[i].pos=pos;
+     xrefs[i].type=type;		// (Typ sollte noch ungesetzt gewesen sein)
+     return xrefs[i];			// Suche beendet
+    }
+    xrefs[i].scope.end=pos;		// Jenes Scope-Ende ändern
+    xref.scope.start=xrefs[i].pos;	// Diesen Scope-Anfang setzen
+    break;				// Suche beendet
+   }
+  }
+ }
+ xrefs.push(xref);	// erst mal ohne "hoisting" zu beachten
+ return xref;		// notwendig für später zu tätigende Scope-Abschlüsse
+}
+
+// Nach dem Durchlauf durch den Assembler-Quelltext gibt es eine
+// Menge nicht gefundener Spungziele der Art "0f" oder "1b"
+// sowie alle normalen Vorwärtssprünge (auch in C ein Problem!)
+// (TODO: Sollte gar nicht mehr vorkommen!)
+function xrefs_asm_postprocess(xrefs) {
+ return xrefs.filter(function(el){return el.type=="l"});
+}
+
+// TODO: JavaScript-Interpreter blockieren, die keine anonymen Funktionen kennen
+// Dieses Objekt hält den Input-Quelltext (der bereits
+// von < und > befreit sein muss und anwenderspezifische <>-Anmerkungen aufweisen darf)
+// sowie die aktuelle Parse-Position.
+// Mit zusätzlichen Rückgabewerten (etwa <hi>) ist das Funktions-Handling erleichtert.
+// Die (anonymen) Funktionen bearbeiten den pre.innerHTML und ergänzen die
+// Hervorhebungen für Kommentare, Schlüsselwörter, Zahlen, Strings usw.
+// Deren Formatierung ist Sache von CSS.
+// C und C++ ist eingebaut, Pascal/Delphi vorbereitet.
+function Parser(txt) {
+ this.inpre=false;
+ this.txt=txt;
+ this.pos={pos:0,line:1,column:0};	// Zeilen- und Spaltenzähler, Spalte nullbasiert
+ this.TABSIZE=8;	// muss mit der „tab-size“-CSS-Eigenschaft des <pre> übereinstimmen
+ this.xrefs=[];
+ this.defines={		// Kann enthalten: string, number, function, object{arg:string,val:string}
+  "__FILE__":"noname.c",
+  "__LINE__":function(){return this.pos.line+1;},
+  "__cplusplus":1,
+ };
+ this.nestblock=[];
+ this.end=function() {
+  return this.pos.pos>=this.txt.length;
+ }
+ this.peek=function() {		// Nächstes Zeichen lesen zum Prüfen
+  return this.txt.charAt(this.pos.pos);
+ }
+ this.get1=function() {		// Nächstes Zeichen abholen (ohne Zeilenzählung)
+  return this.txt.charAt(this.pos.pos++);
+ }
+// Ein Zeichen holen, notfalls "\r\n" oder "\n\r" (also 2 Zeichen) bei DOS-Zeilenenden
+// Oder eine Entität wie &gt;, &lt; und &amp;
+// Zählt Zeile und Spalte mit; this.pos bestimmt die aktuelle Zeile/Spalte.
+ this.get=function() {
+  var ret=this.get1();
+  if (ret=='\r' || ret=='\n') {
+   if (this.inpre) {this.inpre=false;}
+   ++this.pos.line;
+   this.pos.column=0;
+   this.instructiontype="";	// für Sprünge: Zeile enthält "goto" o.ä.
+  }else if (ret=='\t') {
+   this.pos.column+=this.TABSIZE-this.pos.column%this.TABSIZE;
+  }else ++this.pos.column;
+  if (ret=='&') {
+// Falsche Entitäten werden browser-ähnlich geschluckt
+// (= fehlendes ";" kein Problem)
+   while (!this.end()) {
+    var c=this.peek();	// Nachfolgende Buchstaben und Ziffern entnehmen
+    if (/[0-9A-Z]/i.test(c)) {	// isalnum(c)
+     ret+=c; this.pos.pos++;
+    }else{
+     if (c==';') {ret+=c; this.pos.pos++;}
+     break;
+    }
+   }
+  }
+  if (ret=='\r' && this.peek()=='\n') ret+=this.get1();
+  else if (ret=='\n' && this.peek()=='\r') ret+=this.get1();
+  return ret;
+ }
+// Weißraum holen; liefert leere Zeichenkette wenn kein Weißraum
+ this.getWhite=function() {
+  var ret="";
+  for(;;) switch (this.peek()) {
+   case ' ':
+   case '\t':
+   case '\v':
+   case '\r':
+   case '\n': ret+=this.get(); break;
+   default: return ret;
+  }
+ }
+// Präprozessor, Kommentare, Strings und reguläre Ausdrücke erkennen (C, evtl. Pascal usw.)
+// Liefert null wenn nichtleeres <start> nicht passt
+// Ist <end> gegeben wird mit <end>, dem Zeilenende oder Stringende abgebrochen
+// Ist <ml> (= multiline) gegeben und true, wird nicht mit dem Zeilenende abgebrochen
+ this.getRun=function(start,end,ml) {
+  if (!start) start="";
+  if (start && this.txt.substr(this.pos.pos,start.length)!==start) return null;
+  this.pos.pos+=start.length;	// Der erste Stern muss hier verschluckt werden. (Nicht /*/)
+  loop:for(;;){
+   switch (this.peek()) {
+    case '': break loop;	// Ende (bei Strings: Fehlerhaftes Dateiende!)
+    case '\\': start+=this.get(); start+=this.get(); break;	// ggf. Zeilenfortsetzung
+    case '\r':
+    case '\n': if (!ml) break loop;	// Multiline-Kommentar hier nicht abbrechen!
+    default: if (end && this.txt.substr(this.pos.pos,end.length)===end) {
+     start+=end;
+     this.pos.pos+=end.length;	// Ende erkannt
+     break loop;
+    }else start+=this.get();
+   }
+  }
+  return start;
+ }
+ 
+ this.getToken=function() {
+  this.hi="";
+  var ret;
+  if (ret=this.getRun("<span class=\"ln\"","</span>",true)) this.hi=null; // Zeilennummern
+  else if (ret=this.getRun("<",">")) this.hi=null;	// handgemachte HTML-Zusätze
+		// TODO: Zwischengeschaltete Strings können ">" enthalten!
+  return ret;
+ }
+
+ this.getCToken=function() {	// C oder C++
+  var ret;
+  if (ret=this.getToken());
+  else if (!this.inpre && this.peek()=='#') {
+   this.inpre=true;	// Präprozessor-Anweisung
+   return "<d>"+this.get();
+  }else if (this.inpre && (ret=this.getRun("&lt;","&gt;"))) this.hi="s";	// #include <stdio.h> wie String
+  else if (ret=this.getRun("'","'")) this.hi="s";	// Zeichen-Konstante
+  else if (ret=this.getRun('"','"')) this.hi="s";	// String-Konstante
+  else if (ret=this.getRun("/*","*/",true)) this.hi="i";// C-Kommentar
+  else if (ret=this.getRun("//")) this.hi="i";		// C++-Kommentar
+  else{
+   var alpha=/[A-Za-z_$]/;	// Dollarzeichen für GNU-C (huch?)
+   var alnum=/[0-9A-Za-z_$]/;	// für Ende des Bezeichners
+   var num=/[0-9]/;
+   var numal=/[0-9A-Za-z_.]/;	// Punkt (Dezimaltrennzeichen!) erlauben
+   var c;
+   ret=this.get();
+   if (alpha.test(ret)) while (alnum.test(this.peek())) ret+=this.get();	// Bezeichner
+   else if (num.test(ret)) {
+    while (numal.test(this.peek())) ret+=this.get();	// Zahl
+    this.hi="n";
+   }
+   else if (ret==='&') do ret+=c=this.get(); while(c!==';');	// &amp; &lt; &gt; als /ein/ Token
+  }
+  return ret;	// Ansonsten liefert diese Funktion Einzelzeichen (nicht "++", "+=" oder so)
+ }
+ 
+ this.getMToken=function() {	// Matlab
+  var ret;
+  if (ret=this.getToken()) ;
+  else if (ret=this.getRun("'","'")) this.hi="s";	// Zeichen-Konstante
+  else if (ret=this.getRun("%")) this.hi="i";		// C++-Kommentar
+  else{
+   var alpha=/[A-Za-z_]/;
+   var alnum=/[0-9A-Za-z_]/;	// für Ende des Bezeichners
+   var num=/[0-9]/;
+   var numal=/[0-9A-Za-z_.]/;	// Punkt (Dezimaltrennzeichen!) erlauben
+   var c;
+   ret=this.get();
+   if (alpha.test(ret)) while (alnum.test(this.peek())) ret+=this.get();	// Bezeichner
+   else if (num.test(ret)) {
+    while (numal.test(this.peek())) ret+=this.get();	// Zahl
+    this.hi="n";
+   }
+   else if (ret==='&') do ret+=c=this.get(); while(c!==';');	// &amp; &lt; &gt; als /ein/ Token
+  }
+  return ret;	// Ansonsten liefert diese Funktion Einzelzeichen (nicht "++", "+=" oder so)
+ }
+ 
+ this.getAwkToken=function() {
+  var ret;
+  if (ret=this.getToken()) ;
+  else if (ret=this.getRun("'","'")) this.hi="s";	// Zeichen-Konstante
+  else if (ret=this.getRun('"','"')) this.hi="s";	// String-Konstante
+  else if (ret=this.getRun("/","/")) this.hi="r";	// regulärer Ausdruck (wie kann man den vom Divisionsstrich unterscheiden??)
+  else if (ret=this.getRun("#")) this.hi="i";		// Kommentar
+  else{
+   var alpha=/[A-Za-z_]/;
+   var alnum=/[0-9A-Za-z_]/;
+   var num=/[0-9]/;
+   var numal=/[0-9A-Za-z.]/;	// Punkt (Dezimaltrennzeichen!) erlauben
+   var c;
+   ret=this.get();
+   if (alpha.test(ret)) while (alnum.test(this.peek())) ret+=this.get();	// Bezeichner
+   else if (num.test(ret)) {
+    while (numal.test(this.peek())) ret+=this.get();	// Zahl
+    this.hi="n";
+   }
+   else if (ret==='&') do ret+=c=this.get(); while(c!==';');
+  }
+  return ret;
+ }
+
+ this.getPasToken=function() {
+  var ret;
+  if (ret=this.getToken()) ;	// TODO: Unsauber! Pascal kennt den Backslash nicht!
+  else if (ret=this.getRun("'","'")) this.hi="s";	// Zeichen-Konstante
+  else if (ret=this.getRun('"','"')) this.hi="s";	// String-Konstante
+  else if (ret=this.getRun("{","}",true)) this.hi="i";	// Pascal-Kommentar
+  else if (ret=this.getRun("//")) this.hi="i";		// Delphi-Kommentar
+  else{
+   var alpha=/[A-Za-z_]/;
+   var alnum=/[0-9A-Za-z_]/;
+   var num=/[0-9$]/;		// $ für Hexzahlen
+   var numal=/[0-9A-Za-z_.]/;	// Punkt (Dezimaltrennzeichen!) erlauben
+   var c;
+   ret=this.get();
+   if (alpha.test(ret)) while (alnum.test(this.peek())) ret+=this.get();	// Bezeichner
+   else if (num.test(ret)) {
+    while (numal.test(this.peek())) ret+=this.get();	// Zahl
+    this.hi="n";
+   }
+   else if (ret==='^') {				// Zeichen-Konstante
+    ret+=this.get();					// Buchstabe dahinter
+    this.hi="s";
+   }
+   else if (ret==='&') do ret+=c=this.get(); while(c!==';');	// &amp; &lt; &gt; als /ein/ Token
+  }
+  return ret;	// Ansonsten liefert diese Funktion Einzelzeichen (nicht "++", "+=" oder so)
+ }
+ 
+ this.getAsmToken=function() {
+  var ret;
+  if (ret=this.getToken()) ;	
+  else if (ret=this.getRun("'","'")) this.hi="s";	// Zeichen-Konstante
+  else if (ret=this.getRun('"','"')) this.hi="s";	// String-Konstante
+  else if (ret=this.getRun("/*","*/",true)) this.hi="i";// C-Kommentar
+  else if (ret=this.getRun("//")) this.hi="i";		// C++-Kommentar
+  else if (ret=this.getRun(";")) this.hi="i";		// Assembler-Kommentar
+  else if (ret=this.getRun("#")) this.hi="d";		// Präprozessor-Anweisung
+  else if (ret=this.getRun("."," ")) this.hi="d";	// Direktive
+  else{
+   var col=this.pos.column;	// Spalte retten (für Labels bei mpasm, gpasm)
+   var alpha=/[@A-Za-z_$]/;	// Dollarzeichen zulassen für gcc und gas, @ für TASM oder MASM
+   var alnum=/[0-9@A-Za-z_$]/;	// für Ende des Bezeichners
+   var num=/[0-9]/;
+   var numal=/[0-9A-Za-z_.]/;	// Punkt (Dezimaltrennzeichen!) erlauben
+   var c;
+   ret=this.get();
+   if (alpha.test(ret)) {
+    while (alnum.test(this.peek())) ret+=this.get();	// Bezeichner
+    if (!this.nestblock.length) {
+     if (this.peek()==':') this.hi="l";
+     if (!col) this.hi="?";	// Könnte Label sein, wenn kein EQU oder MACRO oder "=" folgt
+    }else if (!col) this.hi="d";	// immer (irgendeine) Definition innerhalb CBLOCK oder MACRO
+   }
+   else if (num.test(ret)) {
+    while (numal.test(this.peek())) ret+=this.get();	// Zahl
+    if (this.peek()==':') this.hi="l";	// gas-labels
+    else this.hi="n";
+   }
+   if (this.hi=="l") {
+    xref_add_def(this.xrefs,ret,this.hi,new Pos(this.pos));
+   }else if (this.hi=="" || this.hi=="n") {
+    if (ret.match(/^[0-9@A-Za-z_$]+$/) && ret.match(alpha)) {
+     var p=new Pos(this.pos);
+     p.typ=this.instructiontype;
+     xref_add_ref(this.xrefs,ret,p);
+    }
+   }
+   else if (ret==='&') do ret+=c=this.get(); while(c!==';');	// &amp; &lt; &gt; als /ein/ Token
+  }
+  return ret;
+ }
+ 
+ this.getLineToken=function() {
+  var ret;
+  if (ret=this.getToken()) ;	// Zeilennummerierung überspringen
+  else ret=this.getRun();
+  return ret;
+ }
+ 
+ this.keywords={};	// keywords = assoziatives Array für Geschwindigkeit
+ this.addKeywords=function(strings,value) {
+  for (var i=0; i<strings.length; i++) this.keywords[strings[i]]=value;
+ }
+// Zusätzlich kennt C/C++ vier Dictionaries für Variablen, Typen, Labels und Namespaces
+
+ this.hiliteC=function() {
+  var out="";
+  var prev="";
+  
+  this.addKeywords(["auto","break","case","continue","default","do","else","enum",
+   "extern","for","goto","if","inline","return","sizeof","static",
+   "struct","switch","typedef","union","while"],0);
+  this.addKeywords(["char","const","double","float","int","long","register","short",
+   "signed","unsigned","void","volatile","wchar_t"],-1);
+  if (true)
+  this.addKeywords(["asm","_asm","based","_catch","cdecl","compl","_cs","_ds","_es",
+   "export","far","fastcall","_finally","_forceinline","__forceinline","fortran","huge","interrupt",
+   "_leave","_loadds","near","_oldcall","pascal","_saveregs","_seg","_ss",
+   "stdcall","_syscall","_try","_unaligned"],1);
+  if (this.lng=="cpp") {
+   this.addKeywords(["bool","catch","class","constexpr","const_cast","delete","dynamic_cast","explicit",
+    "export","except","false","final","friend","mutable","namespace","new",
+    "operator","private","protected","public","reinterpret_cast","static_cast","template","this",
+    "throw","true","try","typeid","typename","using","virtual"],2);
+   if (8) this.addKeywords(
+   ["and","and_eq","bitand","bitor","compl","not","not_eq","or",
+    "or_eq","xor","xor_eq"],8);
+   if (11) this.addKeywords(
+   ["alignas","alignof","char16_t","char32_t","constexpr","decltype","noexcept","nullptr",
+    "static_assert","thread_local","final","override"],11);
+   if (20) this.addKeywords(
+   ["char8_t","concept","consteval","constinit","co_await","co_return","co_yield","requires"],20);
+   if (23) this.addKeywords(["atomic_cancel","atomic_commit","atomic_noexcept","reflexpr","synchronized"],23);
+   if ("µs") this.addKeywords(["each","in","null","override"],99);
+   if ("gnu") this.addKeywords(["__attribute__"],42);
+  }
+ 
+  while (!this.end()) {
+   out+=this.getWhite();
+   var token=this.getCToken();
+   var keyword="";
+   if (this.hi) {
+    token="<"+this.hi+">"+token+"</"+this.hi+">";	// gefundenes Highlight
+   }
+   else if (this.hi==="") {	// bei <null> ist's HTML
+    /*if (this.inpre) switch (this.inpre) {
+     case true:
+     case "#": this.inpre=token; break;	// umwandeln von <true> in das erste Wort nach #
+     case "define": {	// 1. Klammerausdruck (wenn folgend) als Argumentnliste parsen
+			// 2. Rest bis Zeilenende oder Kommentar parsen
+      var k=this.getWhite();
+      var n=this.getRun();
+      this.getWhite();
+      var arg=this.getRun('(',')');
+      if (arg) {
+       this.getWhite();
+       this.defines[n]={arg:arg,val:txt.substr(this.pos.pos)};
+      }else{
+       this.defines[n]=txt.substr(this.pos.pos);
+      }
+      token+=k+n;
+     }break;
+     case "undef": {
+      this.getWhite();
+      var n=this.getRun();
+      delete this.defines[n];
+     }break;
+     case "line": {
+      this.getWhite();
+      this.pos.line=this.getRun();
+      this.getWhite();
+      var n=this.getRun('""','""');
+      if (n) this.defines["__FILE__"]=n.substr(1,-1);	// Neuen Dateinamen einsetzen
+     }break;
+     case "include": {
+     }break;
+     case "pragma":
+     case "error":
+     case "warning":	// Nicht-Standard
+     case "if":
+     case "ifdef":
+     case "ifndef":
+     case "else":
+     case "elif":
+     case "endif": break;
+     default: console.log("Unbekannte Präprozessoranweisung %s in Zeile %d",this.inpre,this.pos.line);
+    }
+
+    else*/ if (token in this.keywords) {
+     keyword=token;
+     token="<b"+(this.keywords[token]>=11?" class=e":"")+">"+token+"</b>";
+    }else if (token.match(/^[A-Za-z_]/)) {
+     if (prev=="struct" || prev=="union" || prev=="class")
+       xref_add_def(this.xrefs,token,prev,new Pos(this.pos));
+     else xref_add_ref(this.xrefs,token,new Pos(this.pos));
+    }
+   }
+   out+=token;
+   prev=keyword;
+  }
+//  if (!this.inpre) {
+//   console.log(this.xrefs);
+//  }
+  return out;
+ // in Strings und Kommentaren könnte man noch nach URLs suchen ...
+ // Sowie Funktionsreferenzen anlegen, Windows-API-Funktionen verlinken u.v.a.m.
+ }
+ 
+ this.hilitePas=function() {
+  var out="";
+  var prev="";
+  var keywords=Array("and","array","asm","begin","break","case","constructor",
+	"continue","destructor","div","do","downto","else","end",
+	"false","file","for","function","goto","if","implementation",
+	"in","inline","interface","label",
+	"mod","nil","not","object","of","on","operator","or",
+	"packed", "procedure","program","record","repeat",
+	"set","shl","shr","string",
+	"then","to","true","type",
+	"unit","until","uses","var","while","with","xor");
+  var key_objpas=Array("as","class","constref","dispose","except","exit",
+	"exports","finalization","finally","inherited","initialization","is",
+	"library","new","on","out","property","raise","self","threadvar","try");
+  Array.prototype.contains=function(needle) {
+   needle=needle.toUpperCase();
+   for (var i in this) if (String(this[i]).toUpperCase() == needle) return true;
+   return false;
+  }
+  while (!this.end()) {
+   out+=this.getWhite();
+   var token=this.getPasToken();
+   if (this.hi==="") {
+    if (keywords.contains(token)) this.hi="b";
+//    else if (functions.contains(token)) this.hi="b style='color:blue'";
+//    else if (builtins.contains(token)) this.hi="b style='color:green'";
+   }
+   if (this.hi) token="<"+this.hi+">"+token+"</"+this.hi+">";
+   out+=token;
+  }
+  return out;
+ }
+
+ this.hiliteJS=function() {
+  var out="";
+  var prev="";
+  var keywords=Array(
+    "abstract","arguments","await","boolean","break","byte","case","catch","char","class","const","continue","debugger","default","delete","do",
+    "double","else","enum","eval","export","extends","false","final","finally","float","for","function","goto","if","implements","import",
+    "in","instanceof","int","interface","let","long","native","new","null","package","private","protected","public","return","short","static",
+    "super","switch","synchronized","this","throw","throws","transient","true","try","typeof","var","void","volatile","while","with","yield");
+  Array.prototype.contains=function(needle) {
+   for (var i in this) if (this[i] == needle) return true;
+   return false;
+  }
+ 
+  while (!this.end()) {
+   out+=this.getWhite();
+   var token=this.getCToken();
+   var keyword="";
+   if (this.hi) {
+    token="<"+this.hi+">"+token+"</"+this.hi+">";	// gefundenes Highlight
+   }
+   else if (this.hi==="") {	// bei <null> ist's HTML
+    if (keywords.contains(token)) {
+     keyword=token;
+     token="<b>"+token+"</b>";
+    }
+    else if (token.match(/^[A-Za-z_]/)) {
+     xref_add_ref(this.xrefs,token,new Pos(this.pos));
+    }
+   }
+   out+=token;
+   prev=keyword;
+  }
+  return out;
+ }
+
+ this.hiliteAwk=function() {
+  var out="";
+  var keywords=Array("BEGIN","END","if","else","while","do","for","in","break","continue",
+    "delete","next","nextfile","function","func","exit","$");
+  var functions=Array("int","sqrt","exp","log","sin","cos","atan2","rand","srand",
+    "index","length","match","split","sprintf","printf","print","sub","gsub","gensub","substr","tolower","toupper",
+    "close","fflush","system",
+    "systime","strftime");
+  var builtins=Array("CONVFMT","FIELDWIDTHS","FS","IGNORECASE","OFMT","OFS","ORS","RS","SUBSEP",
+    "ARGC","ARGV","ARGIND","ENVIRON","ERRNO","FILENAME","FNR","NF","NR","RLENGTH","RSTART","RT");
+  Array.prototype.contains=function(needle) {
+   for (var i in this) if (this[i] == needle) return true;
+   return false;
+  }
+  while (!this.end()) {
+   out+=this.getWhite();
+   var token=this.getAwkToken();
+   if (this.hi==="") {
+    if (keywords.contains(token)) this.hi="b";
+    else if (functions.contains(token)) this.hi="b style='color:blue'";
+    else if (builtins.contains(token)) this.hi="b style='color:green'";
+   }
+   if (this.hi) token="<"+this.hi+">"+token+"</"+this.hi+">";
+   out+=token;
+  }
+  return out;
+ }
+
+ this.hiliteAsm=function() {
+  var out="";
+  var avr_mnemo=["add","adc","adiw","sub","subi","sbc","sbci","sbiw","and","andi","or","ori",
+    "eor","com","neg","sbr","cbr","inc","dec",
+    "mov","movw","ldi","lds","ld","ldd","sts","st","std","lpm","spm","in","out","push","pop",
+    "break","nop","sleep","wdr","rjmp","rcall","ret","reti",
+    "cpse","cp","cpc","cpi","sbrc","sbrs","sbic","sbis","brbs","brbc",
+    "sbi","cbi","lsr","ror","asr","swap","bset","bclr","bst","bld",
+//ab ATmega:
+    "mul","muls","mulsu","fmul","fmuls","fmulsu","elpm","ijmp","eijmp","jmp","icall","eicall","call",
+    ];
+  var avr_premo=["breq","brne","brcs","brcc","lsl","rol","clr","ser","tst",		// Vordefinierte Makros, im Datenblatt als Befehle gelistet (lsl r == add r,r)
+    "brsh","brlo","brmi","brpl","brge","brlt","brhs","brhc","brts","brtc","brvs","brvc","brie","brid",	// = "brbs" oder "brbc"
+    "sec","clc","sen","cln","sez","clz","sei","cli","ses","cls","sev","clv","set","clt","seh","clh",];	// = "bset" oder "bclr"
+  var a12_mnemo=["addwf","andwf","clrf","clrw","comf","decf","decfsz","incf","incfsz",
+    "iorwf","movf","movwf","nop","rlf","rrf","subwf","swapf","xorwf",
+    "bcf","bsf","btfsc","btfss",
+    "andlw","call","clrwdt","goto","iorlw","movlw","option","retlw","sleep","tris","xorlw",];
+  var a14_mnemo=["addlw","retfie","return","sublw",];	// zusätzlich zu a12
+  var a15_mnemo=["addwfc","asrf","lslf","lsrf","subwfb",	// zusätzlich zu a14, a12; "a15" = a14 enhanced
+    "movlb","movlp","bra","brw","callw","reset","addfsr","moviw","movwi",];
+  var pic_premo=["addcf","adddcf","b","bc","bdc","bnc","bndc","bnz","bz","clrc","clrdc","clrz",	// Bei PIC tauchen diese vordefinierten Makros in keinem Datenblatt auf
+    "lcall","lgoto","movfw","negf","setc","setdc","setz","skpc","skpdc","skpnc","skpndc","skpnz","skpz",
+    "subcf","subdcf","tstf",];
+  var a16_mnemo=["movff","mulwf","negf","rlncf","rrncf","setf","subfwb","tstfsz",	// zusätzlich, außer "tris" und "option"
+    "cpfseq","cpfsgt","cpfslt","dcfsnz",
+    "infsnz","btg","bn","bnn","bnov","bov","daw","pop","push",
+    "mullw","tblrd","tblwt",];
+  var a17_mnemo=["addfsr","addulnk","callw","movsf","movss","pushl","subsfr","subulnk",];	// "a17" = a16 enhanced
+  var z80_mnemo=["add","adc","sub","sbc","and","or","xor","cp","cmp","bit","set","res","inc","dec",
+    "rr","rrc","srl","sra","rl","rlc","sll","rld","rrd","ld",
+    "ccf","scf","ex","exx","halt","im","in","out","push","pop",
+    "cpi","cpir","cpd","cpdr","ldi","ldir","ldd","lddr","ini","inir","ind","indr","outi","otir","outd","otdr",
+    "call","rst","ret","reti","retn","di","ei",
+    "jp","jpc","jpnc","jpz","jpnz","jpm","jpp","jppe","jppo",	// bezieht sich auf Standard-Assembler, nicht KC85-Assembler (da gab's JMP cc,label)
+    "jr","jc","jnc","jz","jnz","jmi","jpl","jpe","jpo","djnz",];
+  var x86_mnemo=["add","adc","sub","sbc","and","or","xor","cmp","inc","dec","mov",
+    "rr","rrc","srl","sra","rl","rlc","sll","rld","rrd","ld",
+    "ccf","scf","halt","in","out","push","pop",
+    "rep","repne","repnz","repe","repz",
+    "lods","lodsb","lodsw","lodsd",
+    "stos","stosb","stosd","stosq",
+    "scas","scasb","scasw","scasd",
+    "cmps","cmpsb","cmpsw","cmpsd",
+    "movs","movsb","movsw","movsd",
+    "ins","insb","insw","insd",
+    "outs","outsb","outsw","outsd",
+    "call","ret","reti",
+    "jmp","jpc","jpnc","jpz","jpnz","jpm","jpp","jppe","jppo","loop","loopne","loopnz","loope","loopz"];
+  var x87_mnemo=["fld","fsin","fcos","fsincos","fadd","fsub","fmul","fdiv","fstp","fwait"];
+  var sse2_mnemo=["movq"];
+  var i51_keywords=["add","addc","anl","clr","cpl","da","dec","div",
+    "mov","movc","movx","mul","nop","orl",
+    "pop","push","ret","reti","rl","rlc","rr","rrc","setb","subb",
+    "swap","xch","xchd","xrl"];
+  var i51_jumps=["djnz","cjne","jmp","ljmp","sjmp","ajmp","jb","jnb","jbc","jc","jnc","jz","jnz"];
+  var i51_calls=["acall","lcall","call"];
+  var general_keywords=["org","equ","list","title","macro","irp","irpc","endm","endw","while","exitm","end","assume"];
+  var a14_directives=["__badram","__badrom","bankisel","banksel","cblock","code","__config",
+    "constant","da","data","db","de","#define","dt","dtm","dw","else",
+    "endc","endif","error","errorlevel",
+    "expand","extern","fill","global","idata","__idlocs","if","ifdef","ifndef",
+    "#include","local","__maxram","__maxrom","messg",
+    "noexpand","nolist","page","pagesel","pageselw","processor",
+    "radix","res","set","space","subtitle","udata","udata_ovr","udata_shr","#undefine",
+    "variable",];
+  var a16_directives=["access_ovr","code_pack","config","idata_acs","udata_acs",];
+  var a12_jumps=["goto","b","bz","bnz","bc","bnc","bdc","bndc","bra",];
+  var a12_calls=["call","rcall",];
+  var a90_jumps=["rjmp","jmp","breq","brne","brcs","brcc","brsh","brlo","brmi","brpl","brge","brlt","brts","brtc","brie","brid","brvs","brvc"];
+  var a90_calls=["call","rcall",];
+  var z80_jumps=["jmp","jr","ja","jb","jc","jnc","jz","jnz","jrc","jrnc","djnz",];
+  var z80_calls=["call","rst",];
+  Array.prototype.contains=function(needle) {
+   for (var i in this) if (this[i]==needle) return true;
+   return false;
+  }
+
+  var unclear={};
+  while (!this.end()) {
+   if (unclear.tk) unclear.ws+=this.getWhite();
+   else out+=this.getWhite();
+   var token=this.getAsmToken();
+   var tk=token.toLowerCase();
+   if (unclear.tk) {
+    var t="l";
+    switch (tk) {
+     case "macro":
+     case "equ":
+     case "=": t="d"; break;	// Definition, kein Label
+    }
+    out+="<"+t+">"+unclear.tk+"</"+t+">"+unclear.ws;
+    xref_add_def(this.xrefs,unclear.tk,t,unclear.pos);
+    unclear={};
+   }
+   if (this.hi==="") switch (this.lng) {	// bei <null> ist's HTML
+    case "asm avr": case "a90":
+		if (avr_mnemo.contains(tk)) this.hi="b";
+		else if (avr_premo.contains(tk)) this.hi="b class=m";
+		if (a90_jumps.contains(tk)) this.instructiontype="goto";
+		if (a90_calls.contains(tk)) this.instructiontype="call";
+		break;
+    case "i17":
+    case "a17": if (!this.hi && a17_mnemo.contains(tk)) this.hi="b";	// nobreak
+    case "asm pic":
+    case "i16":
+    case "a16": if (!this.hi && a16_mnemo.contains(tk)) this.hi="b";
+		if (!this.hi && a16_directives.contains(tk)) this.hi="d";	// nobreak
+    case "i15":
+    case "a15": if (!this.hi && a15_mnemo.contains(tk)) this.hi="b";	// nobreak
+    case "i14":
+    case "a14": if (!this.hi && a14_mnemo.contains(tk)) this.hi="b";	// nobreak
+    case "i12":
+    case "a12": {
+     if (!this.hi && a12_mnemo.contains(tk)) this.hi="b";
+     if (!this.hi && pic_premo.contains(tk)) this.hi="b class='m'";
+     if (!this.hi && a14_directives.contains(tk)) this.hi="d";
+     switch (tk) {
+      case "cblock": this.nestblock.push({name:tk}); break;
+      case "endc":   this.nestblock.pop(); break;
+     }
+     if (a12_jumps.contains(tk)) this.instructiontype="goto";
+     if (a12_calls.contains(tk)) this.instructiontype="call";
+    }break;
+    case "asm c166":
+    case "asm z80": case "a80": {
+     if (z80_mnemo.contains(tk)) this.hi="b";
+     if (z80_jumps.contains(tk)) this.instructiontype="goto";
+     if (z80_calls.contains(tk)) this.instructiontype="call";
+    }break;
+    case "asm i51": case "a51": case "a52": {
+     if (i51_keywords.contains(tk)) this.hi="b";
+     if (i51_jumps.contains(tk)) this.instructiontype="goto";
+     if (i51_calls.contains(tk)) this.instructiontype="call";
+    }break;
+    case "asm x86": case "a86": {
+     if (x86_mnemo.contains(tk)) this.hi="b";
+     if (x87_mnemo.contains(tk)) this.hi="b";
+     if (sse2_mnemo.contains(tk)) this.hi="b";
+    }
+   }
+   switch (tk) {
+    case "macro": this.nestblock.push({name:tk}); break;
+    case "endm":  this.nestblock.pop(); break;
+   }
+   if (this.hi==="") {
+    if (general_keywords.contains(tk)) this.hi="d";
+   }
+   if (this.hi=="?") {
+    unclear.pos=new Pos(this.pos);
+    unclear.tk=token;
+    unclear.ws="";
+   }else{
+    if (this.hi) token="<"+this.hi+">"+token+"</"+this.hi+">";
+    out+=token;
+   }
+  }
+  if (unclear.tk) {
+   out+="<l>"+unclear.tk+"</l>"+unclear.ws;
+   xref_add_def(this.xrefs,unclear.tk,"l",unclear.pos);
+  }
+  this.xrefs=xrefs_asm_postprocess(this.xrefs);
+  return out;
+ }
+
+// Makefiles (betrachtet Datei zeilenweise, aber beachtet "\\\n" als Zeilenfortsetzung)
+ this.hiliteMak=function() {
+  var out="";
+  var assignment=/^\S+\s*\+?=/;	// Bezeichner am Zeilenanfang, dann "=" oder "+="
+  var rule=/^\S.*:/;		// Bezeichner am Zeilenanfang, dann irgendwo ein ":"
+  while (!this.end()) {
+   var line=this.getLineToken();
+   if (this.hi==="") {
+    if (line.substr(0,1)=="#") this.hi="i";	// Kommentar
+    else if (assignment.test(line)) this.hi="s";	// Variablenzuweisung
+    else if (rule.test(line)) this.hi="n";		// Regel (explizit: Ziel:Quelle)
+   }
+   if (this.hi) line="<"+this.hi+">"+line+"</"+this.hi+">";
+   out+=line;
+   out+=this.get();
+  }
+  return out;
+ }
+// Matlab-Skript
+ this.hiliteM=function() {
+  var out="";
+  while (!this.end()) {
+   out+=this.getWhite();
+   var token=this.getMToken();
+   if (this.hi) token="<"+this.hi+">"+token+"</"+this.hi+">";
+   out+=token;
+   out+=this.get();
+  }
+  return out;
+ }
+}
+
+function paintArrows(c,xrefs) {
+ var dc=c.getContext("2d");
+ var LINESTART=-1.5;		// Erste Zeile (scheint fest zu sein!)
+ var LINEHEIGHT=15;		// Zeilenabstand (scheint fest zu sein!)
+ var R=7;
+ var dx=Math.floor((c.width-R)/xrefs.lanes);
+ if (dx<2) dx=2;
+ for (var i=0;i<xrefs.length;i++) if (xrefs[i]) {
+  var z=LINESTART+xrefs[i].pos.line*LINEHEIGHT;
+  var x=(xrefs.lanes-xrefs[i].lane)*dx+0.5;	// Gasse in Pixel, die kurzen hinten
+  for (var j=0;j<xrefs[i].ref.length;j++) {
+   var caller=xrefs[i].ref[j];
+   if (caller.typ!="goto") continue;
+   var y=LINESTART+5+caller.line*LINEHEIGHT;
+   dc.beginPath();
+   dc.moveTo(c.width,y);
+   dc.lineTo(x+R,y); // waagerecht
+   var r=Math.abs(z-y)/2;
+   if (r<=R) {
+    dc.arcTo(x+R-r,y,x+R-r,(y+z)/2,r);
+    dc.arcTo(x+R-r,z,x+R,z,r);
+   }else{
+    r=z>y?R:-R;
+    dc.arcTo(x,y,x,y+r,R); // erster Bogen
+    dc.lineTo(x,z-r); // senkrecht
+    dc.arcTo(x,z,x+R,z,R); // zweiter Bogen
+   }
+   dc.lineTo(c.width,z); // waagerecht zum Ziel
+   dc.stroke();
+  }
+  dc.beginPath(); // Pfeil
+  var dxx=isCalled(xrefs[i])?10:5;
+  var dyy=isCalled(xrefs[i])?4:2;
+  dc.moveTo(c.width,z);
+  dc.lineTo(c.width-dxx,z-dyy);
+  dc.lineTo(c.width-dxx,z+dyy);
+  dc.stroke();
+  dc.fill();
+ }
+}
+// seitenglobale Variable, zählt Zeilennummern über alle <pre> einer HTML-Seite
+var line_id=0;
+
+function hilitePre(pre) {
+ var c,d;				// Malfläche für Pfeile
+ function put_into_lines(txt) {
+  var in_line=false;
+  var r="";
+  for (var i=0; i<txt.length; i++) {
+   if (!in_line) {r+="<line id=l"+(++line_id)+">"; in_line=true;}
+   var c=txt.charAt(i);
+   r+=c;
+   if (c=='\n') {r+="</line>"; in_line=false;}
+  }
+  if (in_line) r+="</line>";		// wenn die letzte Zeile nicht mit '\n' endet
+  return r;
+ }
+ function createcheckbox(id1,id2) {
+  function create(id) {
+   var n=document.createElement("input");
+   n.type="checkbox";
+   n.id=id;
+   return n;
+  }
+  var n1=create(id1);
+  pre.parentNode.insertBefore(n1,pre);
+  var n=document.createElement("label");
+  n.setAttribute("for",id1);
+  n.textContent=_tr(id1);
+  pre.parentNode.insertBefore(n,pre);
+  var n2=create(id2);
+  var b=document.body;
+  b.insertBefore(n2,b.firstChild);
+  n1.onclick=function(e) {
+   n2.checked=n1.checked;
+  };
+ }
+ if (!line_id) {			// Erstes <pre> im Dokument?
+  createcheckbox("lineno","linenumb");
+  createcheckbox("lnwrap","linewrap");
+ }	 
+ var parser=new Parser(pre.innerHTML);
+ parser.lng=pre.className;
+ function isasm(lng) {return lng.match(/^([ai][0-9]{2}$|asm|inc)/);}
+ if (isasm(parser.lng)			// irgendein Assembler: Spalte für Sprungziele einbauen
+ && window.addEventListener) {		// nicht bei IE8
+// TODO: Auch für C welches "goto" enthält!!
+  pre.style.paddingLeft="40px";
+  pre.style.position="relative";	// Sonst ist die Platzierung des canvas relativ zum Fenster!!
+  c=document.createElement("canvas");
+  c.className="pointers";
+  c.width=40;	// Ganze Pixel
+  c.height=pre.clientHeight;
+  c.style.height=pre.clientHeight+"px";	// sonst gibt's Transformationseffekte!
+  d=document.createElement("canvas")
+  d.className="divider";
+  d.width=10;
+  d.height=pre.clientHeight;
+  d.style.height=pre.clientHeight+"px";
+  d.addEventListener("mousedown",function(e){
+   var prev=e.screenX;
+   function move(e) {
+    var delta=e.screenX-prev;
+    prev=e.screenX;
+    var w=c.width+delta;
+    if (w<20) w=20;
+    if (w>100) w=100;
+    c.width=w;
+    c.style.width=w+"px";
+    d.style.left=(w-10)+"px";
+    pre.style.paddingLeft=w+"px";
+    paintArrows(c,parser.xrefs);
+   }
+   window.addEventListener("mouseup",function(e) {
+    window.removeEventListener("mousemove",move);
+   },false);
+   window.addEventListener("mousemove",move,false);
+  },false);
+ }
+ var txt;
+ if (isasm(parser.lng)) txt=parser.hiliteAsm(parser.lng);
+ else switch (parser.lng) {
+  case "m":   txt=parser.hiliteM(); break;
+  case "js":  txt=parser.hiliteJS(); break;
+  case "c":
+  case "cpp": txt=parser.hiliteC(); break;
+  case "mak": txt=parser.hiliteMak(); break;
+  case "awk": txt=parser.hiliteAwk(); break;
+  case "dpr":
+  case "pas": txt=parser.hilitePas(); break;
+  default: txt=parser.txt;
+ }
+ pre.innerHTML=put_into_lines(txt);
+ if (c) {
+  parser.xrefs.sort(function(a,b){	// nach Gesamt-Linienlänge sortieren…
+   return getSpan(a).l-getSpan(b).l;
+  });
+  var lane=0;	// Gassen suchen; die kurzen sind vorn
+  while(assignLane(parser.xrefs,++lane,0,Infinity));
+  parser.xrefs.lanes=lane;
+  paintArrows(c,parser.xrefs);
+  pre.appendChild(c);
+  pre.appendChild(d);
+ }
+}

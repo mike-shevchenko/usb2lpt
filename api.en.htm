@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<!-- saved from url=(0042)https://heha.fwh.is/usb/USB2LPT/api.en.htm -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="date" content="2006-08-27">
+<link rel="alternate" href="https://heha.fwh.is/usb/USB2LPT/api.de.htm">
+<link rel="stylesheet" href="./api.en_files/h.css"> 
+<script src="./api.en_files/h.js.download"></script>
+<title>API for USB2LPT</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="https://heha.fwh.is/icons/laptop.png"><script type="text/javascript" src="./api.en_files/sh.js.download"></script></head><body style="overflow-x: auto;"><input type="checkbox" id="linewrap"><input type="checkbox" id="linenumb"><div id="LangSel" class="noprint">&nbsp;<a class="nul" href="https://heha.fwh.is/usb/USB2LPT/api.de.htm" title="Deutscher Originaltext">🇩🇪</a></div><div id="NavBar">Content</div><nav id="Nav"><ol><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1">Parallel port compatible access</a><ol><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.1">Opening of USB2LPT</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.2">A single OUT access</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.3">A single IN access</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.4">Combined access</a></li></ol></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#2">Extended port access</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#3">Wait Cycles and Bit Access</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#4">Planned: GPIF boosted High-Speed  transfers</a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#5">Not planned: Use of peripheral features </a></li><li><a href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#6">Read and write RAM, EEPROM, or Flash</a></li></ol><div id="X" title="Close content overlay">X</div></nav>
+
+<h1 align="center"><img src="./api.en_files/usb.gif" alt="USB-Logo">
+ The API for USB2LPT (Application Programmer's Interface)
+ <img src="./api.en_files/subd25.gif" alt="25pol. SubD-Buchse"></h1>
+
+There is a specific API to access USB2LPT.
+You need this API to do:<ul>
+ <li>communicate to USB2LPT not using its “dirty” redirection feature
+ </li><li>speed up data transfer concatenating instructions
+ </li><li>use all (up to 20) data lines for user I/O with individual direction
+and pull-up control
+ </li><li>upload volatile firmware snippets (plugins) to handle bit-banging by 
+microcontroller itself (not possible for ATmega based Low-Speed adapters)
+ </li><li>read and write RAM, EEPROM, and flash area of the USB2LPT controller
+ </li><li>upload a GPIF waveform to dramatically speed up data transfer
+ (CY7C68013A-based high-speed devices only) with no extra firmware
+</li></ul>
+This API is relatively simple and uses almost no symbolic constants.<p>
+
+The objective while creating USB2LPT was <i>not</i> to adopt
+application software. In many cases, this will work well.
+But for some reasons, USB2LPT specific application software
+will have some advantages as noted above.</p><p>
+
+The strategy to communicate to USB2LPT is easy and portable accross
+programming languages as C, Delphi, VisualBasic, VBA, and LabVIEW.
+<b style="color:green">No additional DLLs are needed.</b> You open communication by
+<b>CreateFile</b> of device <code>"\\.\LPT1"</code>
+(or <code>"LPT2"</code> if second device etc.),
+and transfer data over the <b>DeviceIoControl</b> Windows API. 
+
+</p><section class="collapsed" id="1"><h2>Parallel port compatible access<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+
+This access enables using USB2LPT like a real 
+parallel port (inclusive ECP and EPP if needed),
+without “dirty” redirection.
+You don't even need <code>InpOut32.DLL</code> (or similar),
+you don't need administrative privileges, and you won't open a security hole.
+<small>
+Note that <code>InpOut32.DLL</code> opens a security hole by itself;
+application code may format your hard disk.</small>
+
+<section class="collapsed" id="1.1"><h3>Opening of USB2LPT<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.1" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h3><span>
+
+A global variable <code>haccess</code> holding the handle to USB2LPT device is handy.
+
+<input type="checkbox" id="lineno"><label for="lineno">Show line numbers</label><input type="checkbox" id="lnwrap"><label for="lnwrap">Wrap lines</label><pre class="c"><line id="l1">HANDLE hAccess;
+</line><line id="l2">
+</line><line id="l3"> <b>for</b> (<b>int</b> n=<n>9</n>; n; n--) {	<i>// try backwards</i>
+</line><line id="l4">  TCHAR DevName[<n>12</n>];
+</line><line id="l5">  wsprintf(DevName,<s>"\\\\.\\LPT%u"</s>,n);
+</line><line id="l6">  hAccess = <span style="background:white">CreateFile(DevName,GENERIC_READ|GENERIC_WRITE,<n>0</n>,NULL,OPEN_EXISTING,<n>0</n>,<n>0</n>)</span>;
+</line><line id="l7">  <b>if</b> (hAccess!=INVALID_HANDLE_VALUE) <b>goto</b> found;
+</line><line id="l8"> }
+</line><line id="l9"> hAccess = <n>0</n>;
+</line><line id="l10">found:
+</line></pre>
+
+You can open regular parallel ports with same system call.
+Because that's not intended yet, a USB2LPT check should follow.
+
+<pre class="c"><line id="l11"><i>// Read the 8051 XRAM or ATmega flash address 6 where you get the firmware date as FAT date.</i>
+</line><line id="l12"><i>// If this fails, this is not a USB2LPT.</i>
+</line><line id="l13"><d>#include <s>"usb2lpt.h"</s>
+</d></line><line id="l14"> WORD addr = <n>6</n>;
+</line><line id="l15"> WORD date = <n>0</n>;		<i>// Date as FAT date</i>
+</line><line id="l16"> DWORD BytesRet;
+</line><line id="l17"> <b>if</b> (<span style="background:white">DeviceIoControl(hAccess,IOCTL_VLPT_XramRead<i>/*0x22228E*/</i>,&amp;adr,<b>sizeof</b>(adr),&amp;date,<b>sizeof</b>(date),&amp;BytesRet,NULL)</span>) {
+</line><line id="l18">  <i>// this is a USB2LPT device of any version<small>, and the firmware date can be made visible using</small></i><small>
+</small></line><small><line id="l19">   FILETIME ft;
+</line><line id="l20">   DosDateTimeToFileTime(date,<n>0</n>,&amp;ft);
+</line><line id="l21">   SYSTEMTIME st;
+</line><line id="l22">   FileTimeToSystemTime(&amp;ft,&amp;st);
+</line><line id="l23">   TCHAR s[<n>20</n>];		<i>// the string buffer where the date is put</i>
+</line><line id="l24">   GetDateFormat(LOCALE_USER_DEFAULT,<n>0</n>,&amp;st,NULL,s,<n>20</n>);
+</line><line id="l25">   <i>// ...</i></line></small>
+<line id="l26"> }<b>else</b>{
+</line><line id="l27">  <i>// this is a standard parallel port or something else</i>
+</line><line id="l28"> }
+</line></pre>
+
+An “upper filter driver” for regular parallel ports is indended to be written
+that is compatible with USB2LPT.
+So an application software may use the same security-hole-free API for
+parallel ports later. 
+
+</span></section><section class="collapsed" id="1.2"><h3>A single OUT access<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.2" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h3><span>
+This function looks like follows:
+
+<pre class="c"><line id="l29"><b>void</b> outb(BYTE a, BYTE b) {
+</line><line id="l30"> BYTE IoData[<n>2</n>];
+</line><line id="l31"> DWORD BytesRet;
+</line><line id="l32"> IoData[<n>0</n>] = a;
+</line><line id="l33"> IoData[<n>1</n>] = b;
+</line><line id="l34"> <span style="background:white">DeviceIoControl(hAccess,IOCTL_VLPT_OutIn<i>/*0x222010*/</i>,IoData,<b>sizeof</b>(IoData),NULL,<n>0</n>,&amp;BytesRet,NULL)</span>;
+</line><line id="l35">}
+</line></pre>
+
+Where is: <b>a</b> a relative address byte:<ul>
+ <li>0 = data port (see <a href="http://www.beyondlogic.org/spp/parallel.htm">Beyond Logic</a>)
+ </li><li>2 = control port (with bits like “Strobe”, “AutoFeed”, but “Direction” (do data port) too)
+<br>
+ </li><li>3 = EPP address write cycle (see <a href="http://www.beyondlogic.org/epp/epp.htm">Beyond Logic</a>)
+ </li><li>4 = EPP data write cycle (<b>a</b> = 5, 6 and 7&nbsp;do data cycles too)
+<br>
+ </li><li>8 = ECP FIFO write (see <a href="http://www.beyondlogic.org/ecp/ecp.htm">Beyond Logic</a>)
+ </li><li>10 = set ECP configuration register “ECR”
+</li></ul>
+Note that three bits at <b>a</b>=2 are inverted!
+You can avoid inversion by a “feature register“, see later.
+Moreover, you may output data to status port (<b>a</b>=1),
+but without precautions (later), this data will never appear somewhere.
+<p>
+You may wondering that a DLL call is much simpler.
+But beware! For opening a DLL, you most often need extra coding with <code>LoadLibrary</code> and <code>GetProcAddress</code>!
+
+
+</p></span></section><section class="collapsed" id="1.3"><h3>A single IN access<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.3" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h3><span>
+This function looks like follows:
+
+<pre class="c"><line id="l36">BYTE inb(BYTE a) {
+</line><line id="l37"> BYTE IoData[<n>1</n>];
+</line><line id="l38"> DWORD BytesRet;
+</line><line id="l39"> IoData[<n>0</n>] = a|<n>0x10</n>;	<i>// set the bit for read operations</i>
+</line><line id="l40"> <u style="text-decoration:none;background:white">DeviceIoControl(hAccess,IOCTL_VLPT_OutIn<i>/*0x222010*/</i>,IoData,<b>sizeof</b>(IoData),IoData,<b>sizeof</b>(IoData),&amp;BytesRet,NULL)</u>;
+</line><line id="l41"> <b>return</b> IoData[<n>0</n>];
+</line><line id="l42">}
+</line></pre>
+
+Same as for OUT, <b>a</b> is a relative address.
+The operation reads the levels at port pins
+(not necessarily the same as the data output).
+The results are:<ul>
+<li>0 = data port
+</li><li>1 = status port (with bits “Busy”, “Acknowledge”, “Paper End” etc.)
+</li><li>2 = control port (real line states)
+<br>
+</li><li>3 = EPP address read cycle (see <a href="http://www.beyondlogic.org/epp/epp.htm">Beyond Logic</a>)
+</li><li>4 = EPP data read cycle (<b>a</b> = 5, 6 and 7&nbsp;do data cycles too)
+</li><li>8 = ECP FIFO read <i>or</i> reading of “Configuration Register A”
+</li><li>9 = read “Configuration Register B” (always 0)
+</li><li>10 = read ECP Configuration Register “ECR” (e.g. FIFO state)
+</li></ul>
+Note that one bit at status port (<b>a</b>=1)
+and three bits at control port (<b>a</b>=2) are inverted!
+You can avoid inversion by an “extra” register, see later.
+<p>
+See this <a href="https://heha.fwh.is/usb/USB2LPT/PortTalk.zip">a bit too simple wrapper DLL implementation</a>
+<a href="https://heha.fwh.is/usb/USB2LPT/PortTalk.zip/"><img src="./api.en_files/auge.gif" align="top" alt="[Auge]" title="Browse archive" border="0"></a>
+as a reference.
+
+
+</p></span></section><section class="collapsed" id="1.4"><h3>Combined access<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#1.4" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h3><span>
+Singe accesses have no improvement for speed compared to port access trapping!
+The opposite may the case, OUT accesses are <i>not</i> cached and concatenated automatically.
+<p>
+When you look at the code snippets, you will see that all is done with
+<i>one</i> IOCTL codes (0x222010) and up to two buffers.
+You can concatenate IN and OUT instructions in any order upto buffer sizes
+of 64 Bytes (more is not tested yet, but upto 4096 bytes should work).
+</p><p>
+You combine the accesses you need by concatenating OUT addresses,
+following OUT data, and IN addresses into the IOCTL <i>input</i> puffer
+(that is, the data that goes OUT to the USB device),
+and reserve one byte per IN access in the IOCTL <i>output</i> buffer
+(that is, the data that comes IN from the USB device).
+That's all! In this way, you generate <i>microcode</i> that is executed
+by USB2LPT's firmware.
+</p><p>
+For example:</p><pre class="c"><line id="l43"><i>// Read all 17 port pin states with one DeviceIoControl invocation</i>
+</line><line id="l44"><b>void</b> GetPinStates(BYTE states[<n>3</n>]) {
+</line><line id="l45"> <b>static</b> <b>const</b> BYTE SendBytes[<n>3</n>] = {<n>0x10</n>,<n>0x11</n>,<n>0x12</n>};
+</line><line id="l46"> DWORD BytesRet;
+</line><line id="l47"> <u style="text-decoration:none;background:white">DeviceIoControl(hAccess,IOCTL_VLPT_OutIn<i>/*0x222010*/</i>,SendBytes,<n>3</n>,states,<n>3</n>,&amp;BytesRet,NULL)</u>;
+</line><line id="l48">}
+</line></pre>
+
+Bear in mind that reading from data port does <i>not</i> read the pin states if the port is in ECP mode.
+Instead, the <a href="http://en.wikipedia.org/wiki/FIFO">FIFO</a> is read.
+
+
+</span></section></span></section><section class="collapsed" id="2"><h2>Extended port access<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#2" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+
+A USB2LPT device ist a Multi-I/O device with 17 digital I/Os;
+newer revisions have even 20 useable I/Os.<br>
+Using the extended port access you can set the data, data direction,
+and the pull-up (applies to low-speed) for every single pin.
+<p>
+The “backdoor” for doing this are simply some more addresses:</p><ul>
+<li>12 = direction register for data port (default: 0xFF, i.e. all outputs)
+</li><li>13 = direction register for status port (default: 0x07)
+</li><li>14 = direction register for control port (default: 0x0F)
+</li><li>15 = USB2LPT Feature Register (default: 0x00, High-Speed: 0x24)
+</li></ul>
+Direction bits = 1 are outputs, otherwise inputs.<ul>
+ <li>For Cypress controller based Full-Speed and High-Speed USB2LPT,
+ inputs always have a pull-up, either strong to 5&nbsp;V (external) or weak to 3.3&nbsp;V (internal).
+ </li><li>For ATmega based Low-Speed USB2LPT, a weak pull-up is active for inputs when corresponding output data bits are ones.
+</li></ul>
+The three “lower” bits of status ports are ground pins 
+at SubD pins 21, 22, and 23 (see schematic).
+<p>
+The address 11&nbsp;is currently not used.
+</p><p>
+The bits of the USB2LPT Feature Register:</p><ol start="0">
+<li>Simulation of open-collector for data port
+</li><li>Simulation of open-collector for control port in SPP mode
+</li><li>Simulation of open-collector for control port in other modes
+</li><li><i>unused</i>
+</li><li>Serialized: The USB device enumerates with its serial number.
+ While Windows normally “track” devices using the topology (of USB ports and hubs) used,
+ the system will now change to “track” a particular device by its unique serial number.
+ Of-course it will be in effect after next USB enumeration, i.e. device detection process.
+</li><li>DarkBlue: darker blue LED using 12.5 % pulse width modulation (High-Speed only)
+</li><li>DirectIO (no inversions; access to three extra I/Os located at bits 0..2&nbsp;of status port, no automated open-collector simulation)
+</li><li><ul>
+<li>PullUps: Global deactivation of pull-up resistors (High-Speed only), 3.3V compatibility
+</li><li>UseBulk: Use bulk transfers instead of Interrupt Transfer (Low-Speed only).
+<small>Setting this bit will make USB2LPT roughly 8 times faster,
+but renders this device unuseable on Windows Vista and newer.
+Therefore, setting this bit is generally not recommended.</small>
+</li></ul>
+</li></ol>
+The simulation of open-collector enables collision-free wired-AND logic.
+That is needed for some hardware.
+<p style="border:dashed 1px gray;padding:2px 1em">
+<i style="color:gray;font-weight:bold">High-Speed, Full-Speed only:</i>
+Open-collector simulation makes the port compatible to some hardware
+that requires 5&nbsp;V HIGH levels. Otherwise, output HIGH level is limited to 3.3&nbsp;V.
+</p>
+<p style="border:dashed 1px gray;padding:2px 1em">
+<i style="color:gray;font-weight:bold">Low-Speed only:</i> The simulation of open-collector should only be used
+with external pull-up resistors, as internal pullups are very weak (about 40&nbsp;kΩ).
+<br>
+The regular output HIGH level is 5&nbsp;V. If you need 3.3&nbsp;V outputs,
+you should modify the USB2LPT device by inserting a voltage-dropping dual diode
+<b>D2</b> like BAV199 (cut <b>SJ3</b>),
+and change the USB pullup resistor <b>R1</b> to 1.5&nbsp;kΩ.
+See <a href="https://heha.fwh.is/usb/USB2LPT/ul-16.gif">schematic</a>.
+</p>
+
+</span></section><section class="collapsed" id="3"><h2>Wait Cycles and Bit Access<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#3" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+Combination of many OUT and IN accesses into one packet
+may require some sort of program controlling.
+
+There are some additional opcodes for doing this.
+<ul>
+<li>0x20 = Wait, then wait time in steps of 4&nbsp;µs, 0 = 1024&nbsp;µs
+</li><li>0x21 = Set single bit to 1, bit address* follows
+</li><li>0x22 = Reset single bit to 0, bit address* follows
+</li><li>0x23 = Toggle bit, bit address* follows
+</li><li>0x24 = Wait for bit, bit address* follows:<ul>
+ <li>Bit 7:4 = Port offset, 0 = Data port, 1 = Status port, 2 = Control port
+ </li><li>Bit 3 (for opcode 0x24) = Expected Bit value: 0 = continue when 0, block while 1; 1 = continue when 1, block while 0
+ </li><li>Bit 3 (for opcodes 0x21, 0x22, 0x23) = Stuck-safety bit: 0 = normal LPT emulation (read from input port, may influence other bits); 1 = stuck-safe operation (read from output port, never influence other bits)
+ </li><li>Bit 2:0 = bit number 0..7 (for control port, 4..7&nbsp;may behave undefined)
+</li></ul>
+</li></ul>
+
+These extra addresses behave like OUT Addresses (bit 4 cleared),
+i.e. a data byte follows, and there is no answer.
+<p>
+Conditional abort and Loop are not implemented yet, and behaviour may change.
+Nesting may not be allowed.
+
+</p><div style="border:dashed 1px gray;padding:2px 1em">
+<i style="color:gray;font-weight:bold">High-Speed only:</i>
+<section class="collapsed" id="4"><h2>Planned: GPIF boosted High-Speed (48 MByte/s) transfers<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#4" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+
+High-Speed transfers are such using the GPIF (General Purpose Interface).
+Data rates in maximum speed will become possible, even via the 8-bit bus.
+This is 48 MByte/s.
+Fast enough for filling large RAM-based FPGAs (Spartan-3) with configuration data
+in a fraction of a second, and also for streaming video data from/to that FPGA.
+<p>
+The desired waveform must be loaded into a specific RAM area.
+The needed GPIF outputs (CLKOUT, IFCLK, CTL0..2) and inputs (STAT0..2, maybe IFCLK)
+are routed to control vs. status ports. See schematic.
+</p><p>
+While switched to High-Speed transfer,
+the normal parallel-port emulation is disabled.
+</p><p>
+The exact specification will be made later.
+</p></span></section></div>
+
+</span></section><section class="collapsed" id="5"><h2>Not planned: Use of peripheral features (Timer, ADC etc.)<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#5" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+Such use is by far much more than what USB2LPT is planned for,
+and is not compatible between Low-Speed, Full-Speed and High-Speed.
+If someone need such, one can extend the firmware. See below.
+
+</span></section><section class="collapsed" id="6"><h2>Read and write RAM, EEPROM, or Flash<a class="hl" href="https://heha.fwh.is/usb/USB2LPT/api.en.htm#6" title="link for reference: use “copy address” to reference in email etc.">⚓</a></h2><span>
+<i>Fully implemented. See “brenner.c”.</i>
+<p>
+For Full-Speed and High-Speed devices, the API can access:</p><ul>
+<li><code>[bRequest=0xA0]</code> Restricted 8051 XRAM area (write-only)
+</li><li><code>[bRequest=0xA2, wIndex==0]</code> Entire boot EEPROM location (read and write)
+</li><li><code>[bRequest=0xA2, wIndex!=0]</code> Any optional I²C device on I²C bus
+ with automated 1-byte and 2-byte address generation
+ and auto-packetizing in any 2<sup>n</sup> quantity.<ul>
+  <li>wIndexL = I²C address (bit 0&nbsp;is not used, should be zero)
+  </li><li>wIndexH = bit mask<ul>
+   <li>Bit 1:0 = address width selector:<ol start="0">
+    <li>Do not prepend an address
+    </li><li>Auto-prepend single-byte address out of wValueL
+    </li><li>Auto-prepend double-byte address out of wValue
+    </li><li>Auto-prepend double-byte address out of wValue but swap the bytes
+   </li></ol>
+   </li><li>Bit 2 = 1: Do not generate I²C start condition
+   </li><li>Bit 3 = 1: Do not generate I²C stop condition
+   </li><li>Bit 7:4 = automatic block-write selector:<ol start="0">
+    <li>Automatic detection: 8 for 1 byte address size, 32 for 2 byte address size
+    </li><li>Block size = 1, i.e. every byte is prepended by extra (auto-incremented) address byte(s)
+    </li><li>Block size = 2
+    </li><li>Block size = 4
+    </li><li>Block size = 8, etc.
+   </li></ol>
+  </li></ul>
+ </li></ul>
+</li><li><code>[bRequest=0xA3, wIndex==0]</code> Entire 8051 XRAM area (read and write),
+ inclusive program memory, special-function register, USB I/O buffer area,
+ and GPIF table location
+</li><li><code>[bRequest=0xA3, wIndex!=0]</code> RAM/IRAM area (read and write, TODO)
+</li></ul>
+This API allows both self-programming the EEPROM (i.e. firmware update or deletion)
+but also temporary firmware changes (by writing to the microcontroller's RAM).
+The latter option enables using the USB2LPT device as a fully customizeable
+microcontroller device. Either you can use the GPIF interface,
+or do some <a href="http://en.wikipedia.org/wiki/Bit_banging">bit-banging</a>
+in firmware, or both.<br>
+<small>The CY7C68013A doesn't expose timers or serial interfaces to its
+general-purpose I/O pins, so bit-banging is always necessary to implement
+some sort of serial protocol like SPI, I²C, or JTAG.
+However, bit-banging in a microcontroller using assembly language
+can be still quite fast.</small>
+<p>
+For Low-Speed (V-USB based) devices, the API can access:</p><ul>
+<li><code>[bRequest=0xA2]</code> EEPROM memory (read-write)
+</li><li><code>[bRequest=0xA3, wIndex==0]</code> Flash memory (read-only)
+</li><li><code>[bRequest=0xA3, wIndex!=0]</code> RAM and mapped registers (read-write)
+</li></ul>
+Self-programming via this API is not possible,
+but you can start the bootloader by writing a magic byte 0x42 into EEPROM address 0,
+then genereate a USB RESET, then access via
+<a href="http://www.obdev.at/products/vusb/bootloadhid.html">bootloadHID</a> protocol.<p>
+
+
+
+</p><div id="give-freely-root-bcjindcccaagfpapjjmafapmmgkkhgoa" class="give-freely-root" data-extension-id="bcjindcccaagfpapjjmafapmmgkkhgoa" data-extension-name="JSON Formatter" style="display: block;"><template shadowrootmode="open"></template></div></span></section><footer><nav title="Navigation" class="slidein"><a href="https://heha.fwh.is/USB2LPT">Directory above (USB2LPT)</a></nav><hr><address><p id="date"><a href="https://heha.fwh.is/usb/USB2LPT/email?API%20for%20USB2LPT">Henrik Haftmann</a>, created: <time datetime="2006-08-27">August 27. 2006</time> — last modified: <time datetime="2016-09-01">September 1. 2016</time><a class="suppress_before" href="https://de.wikipedia.org/wiki/Creative_Commons"><img src="./api.en_files/CC_BY_icon.svg" align="right" title="gemeinfrei bei Namensnennung"></a>
+</p></address></footer></body></html>

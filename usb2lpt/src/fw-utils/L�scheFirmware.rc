@@ -1,0 +1,35 @@
+#include <windows.h>
+
+LANGUAGE LANG_GERMAN,SUBLANG_GERMAN
+
+STRINGTABLE
+{
+ 1	"Hilfsprogramm zum Löschen (Deaktivieren) der Firmware vom h#s USB2LPT-Gerät.\n"
+ 2	"Versionen 1.0 bis 1.4, 1.7 (Controllerchips AN2131 oder CY7C68013A) März 2012\n\n"
+ 3	"USB2LPT anstecken, muss LPTx sein!\n"
+ 4	"Fehler beim Ausführen der Gerätesteuerung, USB2LPT weg? Oder EEPROM 24C64 weg?\n"
+ 5	"Firmware ist bereits gelöscht, erstes Byte = 0x%02X. USB2LPT abziehen und wieder anstecken!\n"
+ 6	"Firmware im EEPROM des USB2LPT jetzt löschen?\n"
+ 7	"[Zum Beschreiben des EEPROM wird die kostenlose Entwicklungssoftware von\nwww.cypress.com benötigt, davon m.W. das Programm EzMr.exe.]\n"
+ 8	"Erstes Byte (0x%02X) löschen (überschreiben mit 0x%02X)? J/N: "
+ 9	"Fehler beim Ausführen der Gerätesteuerung, USBLPT nicht angesteckt?\n"
+ 10	"Firmware wurde durch Überschreiben des ersten Bytes gelöscht."
+ 11	"\nBeliebige Taste zum Programmende drücken ..."
+}
+
+LANGUAGE LANG_ENGLISH,SUBLANG_ENGLISH_US
+
+STRINGTABLE
+{
+ 1	"Aid programme for the deletion (deactivation) of USB2LPT firmware.\n"
+ 2	"Versions 1.0 to 1.4, 1.7 (with controllers AN2131 or CY7C68013A) March 2012\n\n"
+ 3	"Please connect a USB2LPT, must be recognized as LPTx!\n"
+ 4	"Error in DeviceIoControl(), USB2LPT not attached? Possibly EEPROM 24C64 not connected?\n"
+ 5	"Firmware is already deleted, first byte = 0x%02X. Cycle power to USB2LPT device!\n"
+ 6	"Delete firmware in USB2LPT's EEPROM now?\n"
+ 7	"[Writing EEPROM requires the free development program EzMr.exe from www.cypress.com]\n"
+ 8	"Overwrite first byte (0x%02X) with 0x%02X? Y/N: "
+ 9	"Error in DeviceIoControl(), USB2LPT not attached?\n"
+ 10	"Firmware deleted by overwriting the first byte of EEPROM."
+ 11	"\nPress any key to end the program..."
+}
