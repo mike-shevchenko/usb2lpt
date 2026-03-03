@@ -4,6 +4,8 @@
 
 This repo contains the files from https://heha.fwh.is/usb/USB2LPT/index.en.htm, because that site is extremely hard to navigate and contains a download protection - I manually downloaded all the files which I found useful from this web site, and put them in this repo for the only sake of conveniently having them at hand.
 
+Quick start (documentation) - open [index.en.htm](index.en.htm). Note that the .zip files referenced from that page and its nested pages are unpacked and committed as directories in this repo.
+
 The author of the project is Henrik Haftmann. The last update of the project was in 2018.
 
 ## The project
